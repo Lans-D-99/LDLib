@@ -1,0 +1,147 @@
+<?php
+namespace BaseWebsite\Pages\WWW\Scripts;
+
+use LDLib\Utils\Utils;
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+
+class Router {
+    private static ?string $c_hash = null;
+
+    public static function getVersionedURI() {
+        $h = self::$c_hash ??= hash('md5',self::getPage());
+        return "/scripts/router.js.h_{$h}";
+    }
+
+    public static function getPage(?Request $request=null, ?Response $response=null) {
+
+        $root = Utils::getRootLink();
+        $rootForRegex = str_replace('/','\/',str_replace(['.'],'\.',$root));
+        $response?->header('Content-Type','text/javascript');
+        return <<<JAVASCRIPT
+        let _routerElement = null;
+        let _urlFormatter = null;
+
+        const StateAction = {
+            None:-1,
+            PushState:0,
+            ReplaceState:1
+        }
+
+        class RouterError extends Error {
+            constructor(message) {
+                super(message);
+                this.name = "RouterError";
+            }
+        }
+
+        class LinkInterceptor {
+            static preProcesses = [];
+            static midProcesses = [];
+            static namesTaken = new Map();
+
+            static addPreProcess(name,f,priority) {
+                if (LinkInterceptor.namesTaken.get(name) == true) return false;
+                LinkInterceptor.namesTaken.set(name,true);
+
+                LinkInterceptor.preProcesses.push({name:name,f:f,priority:priority});
+                LinkInterceptor.preProcesses.sort((a,b) => {
+                    if (a.priority > b.priority) return -1;
+                    if (a.priority < b.priority) return 1;
+                    return 0;
+                });
+                return true;
+            }
+
+            static addMidProcess(name,f,priority,replace=true) {
+                if (LinkInterceptor.namesTaken.get(name) == true) {
+                    if (replace) {
+                        for (const o of LinkInterceptor.midProcesses)
+                            if (o.name == name) { LinkInterceptor.midProcesses.splice(LinkInterceptor.midProcesses.indexOf(o),1); break; }
+                    } else return false;
+                }
+                LinkInterceptor.namesTaken.set(name,true);
+
+                LinkInterceptor.midProcesses.push({name:name,f:f,priority:priority});
+                LinkInterceptor.midProcesses.sort((a,b) => {
+                    if (a.priority > b.priority) return -1;
+                    if (a.priority < b.priority) return 1;
+                    return 0;
+                });
+                return true;
+            }
+        }
+
+        function setDefaultUrlFormatter(urlFormatter) {
+            _urlFormatter = urlFormatter != null ? urlFormatter : function(url) {
+                var res = /^(?:$rootForRegex)?\/pages\/([^?]*).*?(?:(?:\?|&)urlEnd=(.+))?$/.exec(url);
+                if (res == null) {
+                    if (__debug) console.log('urlFormatter regex failed');
+                    return url;
+                }
+
+                r1 = res[1].replace(/\.h\w+$/g,'');
+                const afterRoot = r1.endsWith('.php') ? r1.substr(0,r1.length-4) : r1;
+                var displayedURL = `$root/\${afterRoot}`;
+                if (res[2] != undefined) displayedURL += res[2].endsWith('.php') ? res[2].substr(0,res[2].length-4) : res[2];
+                if (__debug) console.log(`urlFormatter: \${url} -> \${displayedURL}`);
+                return displayedURL;
+            };
+        }
+
+        function configRouterDefaults(rootElem=null, urlFormatter=null) {
+            _routerElement = rootElem;
+            setDefaultUrlFormatter(urlFormatter);
+        }
+
+        async function loadPage(url, stateAction=-1, options=null) {
+            if (url == '') return;
+
+            const routerElement = options?.routerElement ?? _routerElement;
+            const urlFormatter = options?.urlFormatter ?? _urlFormatter;
+            const nonOkResponseHandler = options?.nonOkResponseHandler;
+
+            for (const o of LinkInterceptor.preProcesses) {
+                url = o.f(url,stateAction);
+                if (url === false) return;
+            }
+
+            return fetch(url).then((response) => {
+                if (!response.ok) {
+                    if (nonOkResponseHandler == null) throw `Failed to load '\${url}'.`;
+                    else nonOkResponseHandler(url, stateAction);
+                }
+                return response.text();
+            }).then((text) => {
+                if (__debug) console.log("loading page at: "+url);
+
+                displayedURL = urlFormatter(url);
+                for (const o of LinkInterceptor.midProcesses) if (o.f(url,displayedURL,stateAction) == true) return;
+
+                historyEdit(displayedURL,stateAction);
+
+                routerElement.innerHTML = "";
+                const template = document.createElement("template");
+                template.innerHTML = text.trim();
+                template.content.childNodes.forEach(cNode => {
+                    if (cNode.tagName == undefined) {
+                        if (__debug && cNode.nodeName != "#comment") console.warn("Undefined tag: " + cNode.nodeName);
+                        return;
+                    }
+
+                    if (cNode.tagName == "SCRIPT") {
+                        var scrE = document.createElement("script");
+                        scrE.innerHTML = cNode.innerHTML;
+                        if (cNode.type != '') scrE.type = cNode.type;
+                        scrE.async = cNode.async == true;
+                        routerElement.appendChild(scrE);
+                    } else routerElement.appendChild(cNode);
+                });
+
+                return url;
+            });
+        }
+        JAVASCRIPT;
+    }
+}
+?>

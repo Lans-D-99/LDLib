@@ -1,0 +1,30 @@
+<?php
+namespace BaseWebsite\Pages\WWW;
+
+use LDLib\Utils\Utils;
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+
+class Manifest {
+  public static function getPage(?Request $request=null, ?Response $response=null) {
+    $root = Utils::getRootLink();
+    $res = Utils::getRootLink('res');
+    $response?->header('Content-Type', 'application/json');
+    return <<<JSON
+    {
+      "name": "Base Website",
+      "start_url": "$root",
+      "display":"standalone",
+      "icons": [
+        {
+          "src": "$res/icons/globe.svg",
+          "type": "image/svg+xml",
+          "sizes": "any",
+          "purpose": "any"
+        }
+      ]
+    }
+    JSON;
+  }
+}
+?>

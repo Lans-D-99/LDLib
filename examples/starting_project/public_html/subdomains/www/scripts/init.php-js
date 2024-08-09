@@ -1,0 +1,26 @@
+<?php
+namespace BaseWebsite\Pages\WWW\Scripts;
+
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+
+class Init {
+    private static ?string $c_hash = null;
+
+    public static function getVersionedURI() {
+        $h = self::$c_hash ??= hash('md5',self::getPage());
+        return "/scripts/init.js.h_{$h}";
+    }
+    
+    public static function getPage(?Request $request=null, ?Response $response=null) {
+        $debug = (int)$_SERVER['LD_DEBUG'];
+        $response?->header('Content-Type','text/javascript');
+        return <<<JAVASCRIPT
+        var __debug = $debug;
+        var __settingsInitialized = false;
+        var __feat_serviceWorker = 'serviceWorker' in navigator;
+        var __feat_notifications = (__feat_serviceWorker && 'PushManager' in window);
+        JAVASCRIPT;
+    }
+}
+?>

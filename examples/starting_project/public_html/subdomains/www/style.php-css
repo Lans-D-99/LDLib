@@ -1,0 +1,25 @@
+<?php
+namespace BaseWebsite\Pages\WWW;
+
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+
+class Style {
+    private static ?string $c_hash = null;
+
+    public static function getVersionedURI() {
+        $h = self::$c_hash ??= hash('md5',self::getPage());
+        return "/style.css.h_{$h}";
+    }
+    
+    public static function getPage(?Request $request=null, ?Response $response=null) {
+        $response?->header('Content-Type', 'text/css');
+        return <<<CSS
+        :root {
+            background-color: black;
+            color: white;
+        }
+        CSS;
+    }
+}
+?>

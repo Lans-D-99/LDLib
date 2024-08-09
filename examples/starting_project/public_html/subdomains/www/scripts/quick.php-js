@@ -1,0 +1,124 @@
+<?php
+namespace BaseWebsite\Pages\WWW\Scripts;
+
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+
+class Quick {
+    private static ?string $c_hash = null;
+
+    public static function getVersionedURI() {
+        $h = self::$c_hash ??= hash('md5',self::getPage());
+        return "/scripts/quick.js.h_{$h}";
+    }
+
+    public static function getPage(?Request $request=null, ?Response $response=null) {
+        $response?->header('Content-Type','text/javascript');
+
+        $testMode = (int)$_SERVER['LD_TEST'] == 1 ? 'true' : 'false';
+        return <<<JAVASCRIPT
+        function _(s) { return document.querySelector(s); }
+        function _all(s) { return document.querySelectorAll(s); }
+
+        const _v_tpl = document.createElement("template");
+        function stringToNodes(s) {
+            _v_tpl.innerHTML = s;
+            return _v_tpl.content.cloneNode(true).childNodes;
+        }
+
+        function escapeHTML(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        function unescapeHTML(s) {
+            return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#039;/g, "'");
+        }
+
+        function doubleToFloat(v) {
+            return new Float32Array([v])[0];
+        }
+
+        function isIterable(obj) {
+            if (obj == null) return false;
+            return typeof obj[Symbol.iterator] === 'function';
+        }
+
+        function isObjEmpty(obj) {
+            for (var prop in obj) if (Object.prototype.hasOwnProperty.call(obj, prop)) return false;
+            return true
+        }
+
+        function historyEdit(url,stateAction=StateAction.None) {
+            switch (stateAction) {
+                case StateAction.PushState: history.pushState({pageUrl:url}, "", url); break;
+                case StateAction.ReplaceState: history.replaceState({pageUrl:url}, "", url); break;
+                default: break;
+            }
+        }
+
+        function getDateAsString(date,lang='fr-FR') {
+            const a = new Intl.DateTimeFormat('fr-FR', { dateStyle:'full', timeStyle:'long' }).format(date).split(' ');
+            const a2 = [];
+            a2[0] = a[0].charAt(0).toUpperCase() + a[0].slice(1);
+            a2[1] = a[1];
+            a2[2] = a[2].charAt(0).toUpperCase() + a[2].slice(1);
+            a2[3] = a[3];
+            a2[4] = a[5];
+            a2[5] = a[6];
+            return a2;
+        }
+
+        function stringDateToISO(sDate) {
+            const m = /(\\d{4}-\\d\\d-\\d\\d)?(T|\\s+)?(\\d\\d:\\d\\d:\\d\\d)?\\s*(Z)?/.exec(sDate);
+            const sNow = new Date().toISOString();
+            const s1 = sNow.substr(0,10);
+            const s2 = sNow.substr(11,8);
+            let s = '';
+            s += m[1] != null ? m[1] : s1;
+            s += 'T';
+            s += m[3] != null ? m[3] : s2;
+            s += 'Z';
+            return s;
+        }
+
+        function setNumberInTitle(n) {
+            const m = new RegExp('^(?:\\\((\\\d+)\\\))?\\\s*(.*)$').exec(document.title);
+            document.title = (n > 0 ? `(\${n}) ` : '') + m[2];
+        }
+
+        function enableZoom(b=true) {
+            if (b) document.querySelector('#meta_viewport').content = 'width=device-width, initial-scale=1.0';
+            else document.querySelector('#meta_viewport').content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
+        }
+
+        function basicQueryResultCheck(operationResult, preventThrow = false, preventNetAlert=false) {
+            if (!navigator.onLine && operationResult == null) { if (!preventNetAlert) alert('No internet connection detected.'); return false; }
+
+            if (operationResult == null) {
+                alert('Unexepected error.');
+                if (preventThrow != true) throw new Error('Unexepected error.');
+                console.error('Unexepected error.');
+                return false;
+            } else if (!operationResult.success) {
+                alert(queryOperationResultMessage(operationResult))
+                return false;
+            }
+
+            return true;
+        }
+
+        function queryOperationResultMessage(operationResult) {
+            const loadedInTestMode = $testMode;
+            return loadedInTestMode ? `[\${operationResult.resultCode}] \${operationResult.resultMessage}` : `\${operationResult.resultMessage}`;
+        }
+
+        let _v_c_authenticated = null;
+        async function isAuthenticated() {
+            return _v_c_authenticated ??= await sendQuery('query { viewer { dbId } }').then((json) => {
+                return json?.data?.viewer?.dbId != null;
+            });
+        }
+        JAVASCRIPT;
+    }
+}
+?>
