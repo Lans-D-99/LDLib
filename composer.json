@@ -1,0 +1,20 @@
+{
+    "name": "lansd/ldlib",
+    "description":"A library for LDFramework.",
+    "version": "0.1.0",
+    "require": {
+        "php-ds/php-ds": "1.5.*",
+        "swoole/ide-helper": "~5.0.0",
+        "vlucas/phpdotenv": "5.6.*",
+        "webonyx/graphql-php": "15.11.2",
+        "minishlink/web-push": "9.0.*",
+        "aws/aws-sdk-php": "3.321.*",
+        "softcreatr/php-mime-detector": "3.2.*"
+    },
+    "suggest" : {
+        "php": ">=8.3"
+    },
+    "autoload": {
+        "classmap": ["src/Swoole/HTTPServer.php","src/Swoole/WSServer.php","src/DataFetcher.php"]
+    }
+}
