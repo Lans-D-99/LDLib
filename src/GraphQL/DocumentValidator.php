@@ -29,7 +29,11 @@ class DocumentValidator extends \GraphQL\Validator\DocumentValidator {
             if ($rule instanceof Limiter && $skipLimiter) continue;
             $wg->add();
             go(function() use($ast,$typeInfo,$rule,$context,$wg) {
-                Visitor::visit($ast, Visitor::visitWithTypeInfo($typeInfo,Visitor::visitInParallel([$rule->getVisitor($context)])));
+                try {
+                    Visitor::visit($ast, Visitor::visitWithTypeInfo($typeInfo,Visitor::visitInParallel([$rule->getVisitor($context)])));
+                } catch (\GraphQL\Error\Error $e) {
+                    $context->reportError($e);
+                }
                 $wg->done();
             });
         }
