@@ -61,7 +61,7 @@ class LDPDO {
 class PDO {
     public static function getConnection():\PDO|null {
         try {
-            $dbName = (bool)$_SERVER['LD_TEST'] ? $_SERVER['TEST_LD_DB_NAME'] : $_SERVER['LD_DB_NAME'];
+            $dbName = (bool)$_SERVER['LD_TEST'] ? $_SERVER['LD_TEST_DB_NAME'] : $_SERVER['LD_DB_NAME'];
             $conn = new \PDO("mysql:host={$_SERVER['LD_DB_HOST']};dbname={$dbName}", $_SERVER['LD_DB_USER'], $_SERVER['LD_DB_PWD']);
             $conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
