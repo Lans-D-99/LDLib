@@ -89,13 +89,13 @@ enum SuccessType {
 
 enum ErrorType {
     case AWS_ERROR;
-    case CONTEXT_INVALID;
     case DATABASE_ERROR;
     case DBLOCK_TAKEN;
     case DUPLICATE;
     case EXPIRED;
     case FILE_OPERATION_ERROR;
     case INVALID;
+    case INVALID_CONTEXT;
     case INVALID_DATA;
     case LIMIT_REACHED;
     case MISSING_DATA;
