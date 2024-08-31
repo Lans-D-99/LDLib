@@ -193,9 +193,9 @@ class HTTPServer {
             require_once self::$rootPath.'/vendor/autoload.php';
             require_once $libDir.'/Utils/Utils.php';
             require_once $libDir.'/Utils/ArrayTools.php';
-            require_once $libDir.'/Swoole/Executor.php';
             require_once $libDir.'/Swoole/SwoolePromise.php';
             require_once $libDir.'/Swoole/SwoolePromiseAdapter.php';
+            require_once $libDir.'/GraphQL/Executor.php';
             require_once $libDir.'/GraphQL/Rules/Limiter.php';
             require_once $libDir.'/GraphQL/Rules/QueryComplexity.php';
             require_once $libDir.'/GraphQL/Rules/MutationLimiter.php';
