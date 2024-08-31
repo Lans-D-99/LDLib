@@ -191,6 +191,7 @@ class HTTPServer {
             $dotenv->load();
             $libDir = __DIR__.'/..';
             require_once self::$rootPath.'/vendor/autoload.php';
+            require_once $libDir.'/LDLib.php'; \LDLib\LDLib::init();
             require_once $libDir.'/Utils/Utils.php';
             require_once $libDir.'/Utils/ArrayTools.php';
             require_once $libDir.'/Swoole/SwoolePromise.php';

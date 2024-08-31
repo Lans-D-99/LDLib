@@ -57,7 +57,7 @@ class PostHog {
         if ($addTimestampIfNotSet && !isset($a['timestamp'])) $a['timestamp'] = (new \DateTimeImmutable('now'))->format('c');
         if (!isset($a['properties'])) $a['properties'] = [];
         $a['properties']['library'] = 'LDLib';
-        $a['properties']['ldlib_version'] = $_SERVER['LDLIB_VERSION'];
+        $a['properties']['ldlib_version'] = LDLIB_VERSION_WITH_SUFFIX;
 
         $this->batch[] = $a;
 

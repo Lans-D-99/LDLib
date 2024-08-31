@@ -15,6 +15,6 @@
         "php": ">=8.3"
     },
     "autoload": {
-        "classmap": ["src/Swoole/HTTPServer.php","src/Swoole/WSServer.php","src/DataFetcher.php"]
+        "classmap": ["src/LDLib.php","src/Swoole/HTTPServer.php","src/Swoole/WSServer.php","src/DataFetcher.php"]
     }
 }
