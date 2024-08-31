@@ -13,7 +13,7 @@ use Swoole\Http\Response;
 use Swoole\WebSocket\Frame;
 
 abstract class Context {
-    public array $a = [];
+    public ?IIdentifiableUser $authenticatedUser = null;
     public ?User $asUser = null;
     public array $logs = [];
 
@@ -67,7 +67,7 @@ abstract class Context {
     }
 
     public function getAuthenticatedUser():?IIdentifiableUser {
-        return $this->a['authenticatedUser']??null;
+        return $this->authenticatedUser;
     }
 }
 
