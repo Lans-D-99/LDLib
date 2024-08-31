@@ -127,7 +127,7 @@ class WSServer {
                     Timer::tick($ping*1000, function() {
                         exec('systemd-notify WATCHDOG=1');
                     });
-                } else { print_r('Watchdog is not set.'.PHP_EOL); Logger::log(LogLevel::WARN, 'Watchdog', 'Watchdog is not set.'); }
+                } else { echo 'Watchdog is not set.'.PHP_EOL; Logger::log(LogLevel::WARN, 'Watchdog', 'Watchdog is not set.'); }
             }
 
             $sAutoCleanLogs = (int)($_SERVER['LD_AUTOCLEAN_LOGS']??0);

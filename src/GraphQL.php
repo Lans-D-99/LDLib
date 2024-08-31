@@ -227,7 +227,7 @@ class GraphQL {
             }
             self::$schema->assertValid();
         } catch (\Throwable $t) {
-            if ($_SERVER['LD_DEBUG'] === '1') print_r($t->getMessage().PHP_EOL);
+            if ($_SERVER['LD_DEBUG'] === '1') echo $t->getMessage().PHP_EOL;
             Logger::log(LogLevel::FATAL, 'GraphQL', $t->getMessage());
             Logger::logThrowable($t);
             return;

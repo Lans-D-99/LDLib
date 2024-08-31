@@ -111,7 +111,7 @@ class HTTPServer {
         self::$server->set($finalSettings);
 
         self::$server->on('start', function() {
-            print_r("HTTP server started.".PHP_EOL);
+            echo "HTTP server started.".PHP_EOL;
             Logger::log(LogLevel::INFO, 'Server', "HTTP server started.");
 
             $oldMem = -1;
@@ -134,7 +134,7 @@ class HTTPServer {
                     Timer::tick($ping*1000, function() {
                         exec('systemd-notify WATCHDOG=1');
                     });
-                } else { print_r('Watchdog is not set.'.PHP_EOL); Logger::log(LogLevel::WARN, 'Watchdog', 'Watchdog is not set.'); }
+                } else { echo 'Watchdog is not set.'.PHP_EOL; Logger::log(LogLevel::WARN, 'Watchdog', 'Watchdog is not set.'); }
             }
 
             $sAutoCleanLogs = (int)($_SERVER['LD_AUTOCLEAN_LOGS']??0);
@@ -172,7 +172,7 @@ class HTTPServer {
         });
 
         self::$server->on('workerstart', function (Server $server, int $workerId) use($dotenv,$onWorkerStart) {
-            echo "Worker started : $workerId\n";
+            echo "Worker started : $workerId".PHP_EOL;
             Logger::log(LogLevel::INFO, 'Worker - HTTP', "Worker started : $workerId (pid:{$server->getWorkerPid()})");
             ServerContext::workerSet($workerId,'nRequests',0);
 
