@@ -3,25 +3,34 @@ namespace LDLib\Net;
 
 use LDLib\Database\LDPDO;
 use Minishlink\WebPush\{WebPush, Subscription};
-use LDLib\{OperationResult, SuccessType};
+use LDLib\{ErrorType, OperationResult, SuccessType};
+use LDLib\Logger\Logger;
 
 class LDWebPush {
     public WebPush $wp;
+    public bool $initialized = false;
 
     public function __construct() {
-        $this->wp = new WebPush([
-            'VAPID' => [
-                'subject' => "mailto:{$_SERVER['LD_SERVER_ADMIN_EMAIL']}",
-                'publicKey' => $_SERVER['LD_VAPID_PUBLIC_KEY'],
-                'privateKey' => $_SERVER['LD_VAPID_PRIVATE_KEY']
-            ]
-        ]);
-        $this->wp->setReuseVAPIDHeaders(true);
+        try {
+            $this->wp = new WebPush([
+                'VAPID' => [
+                    'subject' => "mailto:{$_SERVER['LD_SERVER_ADMIN_EMAIL']}",
+                    'publicKey' => $_SERVER['LD_VAPID_PUBLIC_KEY'],
+                    'privateKey' => $_SERVER['LD_VAPID_PRIVATE_KEY']
+                ]
+            ]);
+            $this->wp->setReuseVAPIDHeaders(true);
+        } catch (\Throwable $e) {
+            Logger::logThrowable($e);
+            return;
+        }
+        $this->initialized = true;
     }
 
     public function send(LDPDO $conn, int $userId, ?string $payload = null):OperationResult {
-        $stmt = $conn->query("SELECT * FROM push_subscriptions WHERE user_id=$userId");
+        if (!$this->initialized) return new OperationResult(ErrorType::INVALID_CONTEXT, "Instance not initialized.");
 
+        $stmt = $conn->query("SELECT * FROM push_subscriptions WHERE user_id=$userId");
         while ($row = $stmt->fetch()) {
             $notif = [
                 'subscription' => Subscription::create([
