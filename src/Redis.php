@@ -30,8 +30,18 @@ class LDRedis {
         return $this->redis->set($key, $value, $options);
     }
 
-    public function del(string $key):bool|\Redis {
+    public function keys(string $pattern):array|false|\Redis {
+        return $this->redis->keys($pattern);
+    }
+
+    public function del(string|array $key):int|false|\Redis {
         return $this->redis->del($key);
+    }
+
+    public function delM(string $pattern):int|\Redis {
+        $keys = $this->keys($pattern);
+        if (!is_array($keys)) return 0;
+        return $this->del($keys);
     }
 
     public function hGet(string $key, string $hashKey) {
