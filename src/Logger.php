@@ -90,7 +90,7 @@ class Logger {
     }
 
     public static function cleanPHPLogFiles(bool $test=false):array {
-        $filePath = '/var/log/php-error.log';
+        $filePath = ini_get('error_log');
         $aDeleted = [];
         if (file_exists($filePath)) {
             $aDeleted[] = $filePath;
