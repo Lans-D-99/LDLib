@@ -1,7 +1,7 @@
 {
     "name": "lansd/ldlib",
     "description":"A library for LDFramework.",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "require": {
         "php-ds/php-ds": "1.5.*",
         "swoole/ide-helper": "~5.0.0",
