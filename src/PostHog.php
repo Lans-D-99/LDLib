@@ -24,32 +24,41 @@ class PostHog {
     public int $tsLastBatchSent;
     public int $forceSendBatchTimerId;
 
+    public bool $enabled = false;
+
     public static function initMain() {
         self::$main = new PostHog();
     }
 
     public function __construct(public string $host='', public string $projectKey='', public string $personalAPIKey='') {
-        if ($this->host == null) $this->host = $_SERVER['LD_POSTHOG_HOST'];
-        if ($this->projectKey == null) $this->projectKey = $_SERVER['LD_POSTHOG_PROJECT_KEY'];
-        if ($this->personalAPIKey == null) $this->personalAPIKey = $_SERVER['LD_POSTHOG_PERSONAL_API_KEY'];
+        if ($this->host == null) $this->host = $_SERVER['LD_POSTHOG_HOST']??'';
+        if ($this->projectKey == null) $this->projectKey = $_SERVER['LD_POSTHOG_PROJECT_KEY']??'';
+        if ($this->personalAPIKey == null) $this->personalAPIKey = $_SERVER['LD_POSTHOG_PERSONAL_API_KEY']??'';
         $this->curlWaitTimeout = (int)($_SERVER['LD_POSTHOG_CURL_TIMEOUT']??10000);
         $this->batchSendCutoff = (int)($_SERVER['LD_POSTHOG_BATCH_SEND_CUTOFF']??100);
         $this->maxBatchSize = (int)($_SERVER['LD_POSTHOG_MAX_BATCH_SIZE']??500);
         $this->dontChangeURL = (bool)($_SERVER['LD_POSTHOG_DONT_CHANGE_URL']??false);
         $this->forceSendBatch = (int)($_SERVER['LD_POSTHOG_FORCE_SEND_BATCH']??600);
         $this->tsLastBatchSent = time();
+        if (empty($this->host) || empty($this->projectKey)) {
+            Logger::log(LogLevel::WARN, 'PostHog', 'Invalid .env value for "LD_POSTHOG_HOST" or "LD_POSTHOG_PROJECT_KEY", the instance will not process any data.');
+            return;
+        }
 
         $this->forceSendBatchTimerId = Timer::tick((int)($_SERVER['LD_POSTHOG_FORCE_SEND_BATCH_CHECK']??60),function() {
             if (time() - $this->tsLastBatchSent > $this->forceSendBatch) $this->sendBatch();
         });
+        $this->enabled = true;
     }
 
     public function shutdown(bool $sendEvents = true) {
+        if (!$this->enabled) return;
         Timer::clear($this->forceSendBatchTimerId);
         if ($sendEvents) while (count($this->batch) > 0) $this->sendBatch();
     }
 
     public function enqueue(array $a, bool $addTimestampIfNotSet=true) {
+        if (!$this->enabled) return;
         if (count($this->batch) >= $this->maxBatchSize) {
             Logger::log(LogLevel::ERROR, 'PostHog', "Max batch size reached. ({$this->maxBatchSize})");
             return;
@@ -66,6 +75,7 @@ class PostHog {
     }
 
     private function sendBatch(?array $batch=null):OperationResult {
+        if (!$this->enabled) return new OperationResult(ErrorType::INVALID_CONTEXT);
         if ($batch == null) $batch = array_splice($this->batch, 0, min($this->maxBatchSize,count($this->batch)));
         $this->tsLastBatchSent = time();
         $count = count($batch);
