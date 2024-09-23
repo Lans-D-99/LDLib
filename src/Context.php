@@ -26,6 +26,8 @@ abstract class Context {
     public int $nRedisGet = 0;
     public int $nRedisSet = 0;
 
+    public array $gqlPathTimes = [];
+
     public function __construct(public Server|WSServer $server) { }
 
     public function addLog(string $name, string $msg) {
@@ -66,8 +68,21 @@ abstract class Context {
         $this->pdoConns = [];
     }
 
+    public function logQueryPathTime(array $path, ?float $time=null) {        
+        $aSub =& $this->gqlPathTimes;
+        foreach ($path as $key) {
+            if (!array_key_exists($key,$aSub)) $aSub[$key] = [];
+            $aSub =& $aSub[$key];
+        }
+        $aSub['__time__'] = $time === null ? (microtime(true)*1000) : $time;
+    }
+
     public function getAuthenticatedUser():?IIdentifiableUser {
         return $this->authenticatedUser;
+    }
+
+    public function getGraphQLPathTimes():array {
+        return $this->gqlPathTimes;
     }
 }
 
@@ -76,6 +91,8 @@ interface IContext {
     public function getLDRedis():LDRedis;
     public function closeConnections();
     public function getAuthenticatedUser():?IIdentifiableUser;
+    public function getGraphQLPathTimes():array;
+    public function logQueryPathTime(array $a, ?float $time=null);
 }
 
 interface IHTTPContext extends IContext {

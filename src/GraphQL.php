@@ -135,6 +135,7 @@ class GraphQL {
                     $output['processTime'] = "{$graphQLDuration}ms";
                     $context->addServerTimingData("graphql;dur={$graphQLDuration}ms");
                     $context->response->header('Server-Timing', $context->sServerTiming);
+                    $output['pathTimings'] = $context->gqlPathTimes;
                 }
 
                 $context->response->header('content-type', 'application/json');
