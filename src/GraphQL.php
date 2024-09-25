@@ -21,6 +21,7 @@ use LDLib\Context\IWSContext;
 use LDLib\GraphQL\Limiter;
 use LDLib\GraphQL\MutationLimiter;
 use LDLib\GraphQL\QueryComplexity;
+use LDLib\Server\ServerContext;
 use LDLib\Utils\Utils;
 
 class GraphQL {
@@ -58,6 +59,12 @@ class GraphQL {
         };
 
         if (!self::$built) { $respond($context,json_encode(['error' => 'GraphQL not initialized.'],503)); return; }
+
+        // Decompress data
+        if ($isHTTP && is_string($rawContent)) {
+            $rawContent = ServerContext::applyContentDecoding($context->request,$rawContent);
+            if ($rawContent === false) { $respond($context,json_encode(['error' => "Couldn't decode data."]),400); return; }
+        }
 
         // Valid JSON?
         $jsonInput = null;
@@ -139,7 +146,7 @@ class GraphQL {
                 }
 
                 $context->response->header('content-type', 'application/json');
-                $context->response->end(json_encode($output, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+                $context->response->end(ServerContext::applyContentEncoding($context->request,$context->response,json_encode($output, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)));
             } else if ($context instanceof IWSContext) {
                 if ($context->subRequest?->name === '--unsubscribing--') {
                     @$context->server->push($context->frame->fd,json_encode($output,JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
