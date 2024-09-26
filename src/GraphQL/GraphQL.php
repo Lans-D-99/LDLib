@@ -11,6 +11,8 @@ use GraphQL\Language\Parser;
 use GraphQL\Language\Source;
 use GraphQL\Type\Schema as SchemaType;
 use GraphQL\Validator\Rules\QueryComplexity;
+use LDLib\Cache\LDRedis;
+use LDLib\Logger\Logger;
 
 class GraphQLPrimary extends \GraphQL\GraphQL {
     #[\Override]
@@ -23,12 +25,21 @@ class GraphQLPrimary extends \GraphQL\GraphQL {
         array $variableValues = null,
         string $operationName = null,
         callable $fieldResolver = null,
-        array $validationRules = null
+        array $validationRules = null,
     ): Promise {
         try {
-            $documentNode = $source instanceof DocumentNode
-                ? $source
-                : Parser::parse(new Source($source, 'GraphQL'));
+            $queryHash = null;
+            try {
+                $queryHash = crc32($source);
+                if (is_array($variableValues)) foreach ($variableValues as $v) $queryHash = crc32($queryHash. (is_array($v) ? implode(',',$v) : (string)$v));
+            } catch (\Exception $e) { Logger::logThrowable($e); }
+            
+            $redis = $queryHash != null ? new LDRedis() : null;
+            if ($redis?->get("validQueries:$queryHash") === '1') {
+                $newRules = [];
+                foreach ($validationRules as $rule) if ($rule instanceof QueryComplexity) $newRules[] = $rule;
+                $validationRules = $newRules;
+            } 
 
             if ($validationRules === null) {
                 $queryComplexity = DocumentValidator::getRule(QueryComplexity::class);
@@ -42,16 +53,19 @@ class GraphQLPrimary extends \GraphQL\GraphQL {
                     }
                 }
             }
-
+            
+            $documentNode = $source instanceof DocumentNode
+                ? $source
+                : Parser::parse(new Source($source, 'GraphQL'));
             $validationErrors = DocumentValidator::validate($schema, $documentNode, $validationRules);
-
             if ($validationErrors !== []) {
                 return $promiseAdapter->createFulfilled(
                     new ExecutionResult(null, $validationErrors)
                 );
             }
+            $redis?->set("validQueries:$queryHash",'1',['EX' => 3600]);
 
-            return Executor::promiseToExecute(
+            $p = Executor::promiseToExecute(
                 $promiseAdapter,
                 $schema,
                 $documentNode,
@@ -61,6 +75,8 @@ class GraphQLPrimary extends \GraphQL\GraphQL {
                 $operationName,
                 $fieldResolver
             );
+
+            return $p; 
         } catch (Error $e) {
             return $promiseAdapter->createFulfilled(
                 new ExecutionResult(null, [$e])
