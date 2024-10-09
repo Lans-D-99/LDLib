@@ -195,6 +195,8 @@ class HTTPServer {
             require_once $libDir.'/Utils/Utils.php';
             require_once $libDir.'/Utils/MapUtils.php';
             require_once $libDir.'/Utils/ArrayTools.php';
+            require_once $libDir.'/Swoole/ConnectionPool.php';
+            require_once $libDir.'/Swoole/WorkerContext.php';
             require_once $libDir.'/Swoole/SwoolePromise.php';
             require_once $libDir.'/Swoole/SwoolePromiseAdapter.php';
             require_once $libDir.'/GraphQL/Executor.php';
@@ -217,6 +219,7 @@ class HTTPServer {
             require_once $libDir.'/Security.php';
             require_once $libDir.'/User.php';
             require_once $libDir.'/GraphQL.php';
+            WorkerContext::init();
             if (isset($onWorkerStart)) $onWorkerStart();
             if ($workerId == 0) DataFetcher::init2();
             GraphQL::buildSchema();
@@ -235,6 +238,7 @@ class HTTPServer {
 
         self::$server->on('request', function(Request $request, Response $response) use($resolver) {
             $resolver($request,$response);
+            // if ($_SERVER['LD_TEST'] === '1') WorkerContext::waitForFilledPoolSize();
         });
 
         self::$server->on('beforereload', function() use($dotenv) {

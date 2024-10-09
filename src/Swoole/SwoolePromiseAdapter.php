@@ -3,9 +3,8 @@ namespace LDLib\Swoole;
 
 use GraphQL\Executor\Promise\Promise;
 use GraphQL\Executor\Promise\PromiseAdapter;
-use LDLib\Cache\LDRedis;
 use LDLib\DataFetcher\DataFetcher;
-use LDLib\Database\LDPDO;
+use LDLib\Server\WorkerContext;
 use Swoole\Coroutine\WaitGroup;
 
 class SwoolePromiseAdapter implements PromiseAdapter {
@@ -34,11 +33,10 @@ class SwoolePromiseAdapter implements PromiseAdapter {
     }
 
     public function all(iterable $promisesOrValues):Promise {
-        $pdo = new LDPDO();
-        $redis = new LDRedis();
+        $pdo = WorkerContext::$pdoConnectionPool->get();
+        $redis = WorkerContext::$redisConnectionPool->get();
         DataFetcher::exec($pdo,$redis);
-        $pdo = null;
-        $redis->redis->close();
+        $pdo->toPool(); $redis->toPool();
 
         $res = [];
         $wg = new WaitGroup();

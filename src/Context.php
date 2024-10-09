@@ -6,8 +6,8 @@ use LDLib\User\User;
 use Swoole\Http\Server;
 use Swoole\WebSocket\Server as WSServer;
 use LDLib\Database\LDPDO;
+use LDLib\Server\WorkerContext;
 use LDLib\User\IIdentifiableUser;
-use Swoole\Coroutine;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\WebSocket\Frame;
@@ -16,11 +16,6 @@ abstract class Context {
     public ?IIdentifiableUser $authenticatedUser = null;
     public ?User $asUser = null;
     public array $logs = [];
-
-    public array $pdoConns = [];
-    public int $maxPdoConns = 0;
-    public array $redisConns = [];
-    public int $maxRedisConns = 0;
 
     public int $dbcost = 0;
     public int $nRedisGet = 0;
@@ -34,38 +29,12 @@ abstract class Context {
         $this->logs[] = "$name: $msg";
     }
 
-    public function getLDPDO():LDPDO {
-        $cid = Coroutine::getCid();
-        $pdo = $this->pdoConns[$cid]??null;
-        if ($pdo == null) {
-            $pdo = $this->pdoConns[$cid] ??= new LDPDO($this);
-            if ((int)$_SERVER['LD_DEBUG'] === 1) {
-                $n = count($this->pdoConns) + 1;
-                if ($n > $this->maxPdoConns) $this->maxPdoConns = $n;
-            }
-        }
-        return $pdo;
+    public function getLDPDO():LDPDO|false {
+        return WorkerContext::$pdoConnectionPool->get($this);
     }
 
-    public function getLDRedis():LDRedis {
-        $cid = Coroutine::getCid();
-        $redis = Coroutine::getContext($cid)['redis']??null;
-        if ($redis == null) {
-            $redis = Coroutine::getContext($cid)['redis'] = new LDRedis($this);
-            if ((int)$_SERVER['LD_DEBUG'] === 1) {
-                $n = count($this->redisConns) + 1;
-                if ($n > $this->maxRedisConns) $this->maxRedisConns = $n;
-            }
-        }
-        $this->redisConns[$cid] = $redis;
-        return $redis;
-    }
-
-    public function closeConnections() {
-        foreach ($this->redisConns as $conn) $conn->redis->close();
-        foreach ($this->pdoConns as $conn) $conn->close();
-        $this->redisConns = [];
-        $this->pdoConns = [];
+    public function getLDRedis():LDRedis|false {
+        return WorkerContext::$redisConnectionPool->get($this);
     }
 
     public function logQueryPathTime(array $path, ?float $time=null) {        
@@ -87,9 +56,8 @@ abstract class Context {
 }
 
 interface IContext {
-    public function getLDPDO():LDPDO;
-    public function getLDRedis():LDRedis;
-    public function closeConnections();
+    public function getLDPDO():LDPDO|false;
+    public function getLDRedis():LDRedis|false;
     public function getAuthenticatedUser():?IIdentifiableUser;
     public function getGraphQLPathTimes():array;
     public function logQueryPathTime(array $a, ?float $time=null);
@@ -105,7 +73,7 @@ interface IWSContext extends IContext {
     public function __construct(WSServer $server, Frame $frame);
     public function getConnInfo();
     public function getSubscriptionRequest():?SubscriptionRequest;
-    public function getLDRedis():LDRedis;
+    public function getLDRedis():LDRedis|false;
 }
 
 interface IOAuthContext extends IContext {

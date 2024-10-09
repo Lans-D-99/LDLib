@@ -5,6 +5,7 @@ use LDLib\Context\Context;
 use LDLib\Logger\Logger;
 use LDLib\PageInfo;
 use LDLib\PaginationVals;
+use LDLib\Server\WorkerContext;
 use PDOException;
 
 enum MariaDBError:int {
@@ -39,6 +40,11 @@ class LDPDO {
         $b = $this->query("SELECT RELEASE_LOCK('$name')")->fetch(\PDO::FETCH_NUM)[0] === 1;
         if ($b) foreach ($this->locks as $k => $v) if ($v == $name) unset($this->locks[$k]);
         return $b;
+    }
+
+    public function toPool(bool $rollback=false) {
+        if ($rollback) $this->query('ROLLBACK');
+        WorkerContext::$pdoConnectionPool->put($this);
     }
 
     public function close() {
