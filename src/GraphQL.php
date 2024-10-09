@@ -22,6 +22,7 @@ use LDLib\GraphQL\Limiter;
 use LDLib\GraphQL\MutationLimiter;
 use LDLib\GraphQL\QueryComplexity;
 use LDLib\Server\ServerContext;
+use LDLib\Server\WorkerContext;
 use LDLib\Utils\Utils;
 
 class GraphQL {
@@ -103,7 +104,6 @@ class GraphQL {
         $promise = \LDLib\GraphQL\GraphQLPrimary::promiseToExecute(new SwoolePromiseAdapter(), self::$schema, $gqlQuery, null, $context, $gqlVariables, $gqlOperationName, self::$defaultResolver, $rules);
 
         $promise->then(function(\GraphQL\Executor\ExecutionResult $result) use(&$isDebug, &$context, &$tGraphQL, $isHTTP, $queryComplexityRule, $user) {
-            $context->closeConnections();
             if ($isHTTP) $context->deleteUploadedFiles();
             $complexity = $queryComplexityRule->getQueryComplexity();
 
@@ -117,8 +117,6 @@ class GraphQL {
 
                 $output['dbcost'] = $context->dbcost/100;
                 $output['queryComplexity'] = $queryComplexityRule->getQueryComplexity();
-
-                $output['maxRedisConns'] = $context->maxRedisConns;
                 $output['cache'] = [
                     'redis_get' => $context->nRedisGet,
                     'redis_set' => $context->nRedisSet
@@ -134,7 +132,7 @@ class GraphQL {
                         $remoteAddr = Utils::getRealRemoteAddress($context->request);
                         $pdo->pdo->query("INSERT INTO sec_query_complexity_usage (remote_address,complexity_used) VALUES ('{$remoteAddr}',$complexity) ON DUPLICATE KEY UPDATE complexity_used=complexity_used+VALUES(complexity_used)");
                     }
-                    $pdo->close();
+                    $pdo->toPool();
                 });
                 
                 if ($user?->hasRole('Administrator') === true) {
@@ -160,7 +158,6 @@ class GraphQL {
                     try { $success = DataFetcher::storeSubscription($context, json_encode(['data' => $output['data']], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)); }
                     catch (\Throwable $t) { Logger::logThrowable($t); }
                     finally {
-                        $context->closeConnections();
                         if (!$success) {
                             Logger::log(LogLevel::ERROR, 'GraphQL', 'storeSubscription failed');
                             @$context->server->push($context->frame->fd,json_encode(['subscription_init' => 'failed', 'error' => 'Internal error.']));
@@ -181,6 +178,8 @@ class GraphQL {
 
         self::$defaultResolver = $defaultResolver ??= fn() => null;
         self::$errorFormatter = $errorFormatter ??= function(Error $err) {
+            WorkerContext::$pdoConnectionPool->fill();
+            WorkerContext::$redisConnectionPool->fill();
             if ($err->getPrevious() !== null) {
                 $err1Type = $err::class;
                 $err2Type = $err->getPrevious() != null ? $err->getPrevious()::class : '???';

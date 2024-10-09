@@ -186,6 +186,8 @@ class WSServer {
             require_once $libDir.'/Utils/Utils.php';
             require_once $libDir.'/Utils/MapUtils.php';
             require_once $libDir.'/Utils/ArrayTools.php';
+            require_once $libDir.'/Swoole/ConnectionPool.php';
+            require_once $libDir.'/Swoole/WorkerContext.php';
             require_once $libDir.'/Swoole/SwoolePromise.php';
             require_once $libDir.'/Swoole/SwoolePromiseAdapter.php';
             require_once $libDir.'/GraphQL/Executor.php';
@@ -208,6 +210,7 @@ class WSServer {
             require_once $libDir.'/Security.php';
             require_once $libDir.'/User.php';
             require_once $libDir.'/GraphQL.php';
+            WorkerContext::init();
             if (isset($onWorkerStart)) $onWorkerStart();
             if ($workerId == 0 && $wsInitVal == 'full') DataFetcher::init2();
             GraphQL::buildSchema();
@@ -257,6 +260,7 @@ class WSServer {
         });
         self::$server->on('message', function(Server $wsServer, Frame $frame) use($resolver) {
             $resolver($wsServer,$frame);
+            // if ($_SERVER['LD_TEST'] === '1') WorkerContext::waitForFilledPoolSize();
         });
         self::$server->on('close', function(\Swoole\Server $server, int $fd, int $reactorId) {
             DataFetcher::removeConnInfo($fd);

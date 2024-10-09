@@ -4,6 +4,7 @@ namespace LDLib\Cache;
 use LDLib\Context\Context;
 use LDLib\Logger\Logger;
 use LDLib\Logger\LogLevel;
+use LDLib\Server\WorkerContext;
 
 class LDRedis {
     public ?\Redis $redis = null;
@@ -80,6 +81,10 @@ class LDRedis {
             Logger::logThrowable($e);
             $this->init();
         }
+    }
+
+    public function toPool() {
+        WorkerContext::$redisConnectionPool->put($this);
     }
 
     public function init() {
