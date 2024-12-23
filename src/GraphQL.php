@@ -97,7 +97,7 @@ class GraphQL {
         $user = $context->getAuthenticatedUser();
         $rules = self::$rules;
         $queryComplexityRule = new QueryComplexity($user == null ? (int)$_SERVER['LD_SEC_BASE_MAX_QUERY_COMP'] : (int)$_SERVER['LD_SEC_USERS_MAX_QUERY_COMP']);
-        $rules[] = $queryComplexityRule;
+        if (!($context instanceof IOAuthContext)) $rules[] = $queryComplexityRule;
         $rules[] = new MutationLimiter($user == null ? (int)$_SERVER['LD_SEC_BASE_SIMULT_MUTATION_LIMIT'] : (int)$_SERVER['LD_SEC_USERS_SIMULT_MUTATION_LIMIT']);
 
         Executor::setImplementationFactory(fn(...$args) => \LdLib\GraphQL\Executor::create2(...$args));
