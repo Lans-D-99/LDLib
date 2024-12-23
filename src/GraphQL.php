@@ -180,12 +180,20 @@ class GraphQL {
         self::$errorFormatter = $errorFormatter ??= function(Error $err) {
             WorkerContext::$pdoConnectionPool->fill();
             WorkerContext::$redisConnectionPool->fill();
+            $err1Type = $err::class;
             if ($err->getPrevious() !== null) {
-                $err1Type = $err::class;
                 $err2Type = $err->getPrevious() != null ? $err->getPrevious()::class : '???';
                 Logger::log(LogLevel::ERROR, 'GraphQL', "Caught an error of type '{$err1Type}' '{$err2Type}'.");
                 error_log($err->getPrevious()->getMessage());
                 error_log(print_r($err->getPrevious()->getTraceAsString(),true));
+            } else if ($_SERVER['LD_DEBUG'] === '1' && $_SERVER['LD_GRAPHQL_MORE_LOGS'] === '1' && $err1Type == Error::class) {
+                Logger::log(LogLevel::ERROR, 'GraphQL', "Caught an error of type '{$err1Type}'.");
+                error_log($err->getMessage());
+                error_log(print_r($err->getTraceAsString(),true));
+                if ($err->getSource() != null) {
+                    error_log($err->getSource()->body);
+                    error_log(print_r($err->getLocations(),true));
+                }
             }
 
             if ($err instanceof ClientAware && $err->isClientSafe()) {
