@@ -64,7 +64,8 @@ class Logger {
             $date = new \DateTimeImmutable("{$m[1]}T235959Z");
             if ($secondsToKeep < 0 || $date < $cutoff) {
                 $aDeleted[] = $file;
-                if (!$test) { @unlink($file); Logger::log(LogLevel::INFO,'LOGGING',"Deleted '$file'."); }
+                $filePath = "$dir/$file";
+                if (!$test) { @unlink($filePath); Logger::log(LogLevel::INFO,'LOGGING',"Deleted '$filePath'."); }
             }
         }
 
@@ -82,7 +83,8 @@ class Logger {
             $date = new \DateTimeImmutable("{$m[1]}T235959Z");
             if ($secondsToKeep < 0 || $date < $cutoff) {
                 $aDeleted[] = $file;
-                if (!$test) { @unlink($file); Logger::log(LogLevel::INFO,'LOGGING',"Deleted '$file'."); }
+                $filePath = "$dir/$file";
+                if (!$test) { @unlink($filePath); Logger::log(LogLevel::INFO,'LOGGING',"Deleted '$filePath'."); }
             }
         }
 
@@ -93,7 +95,8 @@ class Logger {
         $filePath = ini_get('error_log');
         $aDeleted = [];
         if (file_exists($filePath)) {
-            $aDeleted[] = $filePath;
+            $index = strrpos($filePath,'/');
+            $aDeleted[] = $index != false ? mb_substr($filePath,$index+1) : $filePath;
             if (!$test) { @unlink($filePath); Logger::log(LogLevel::INFO,'LOGGING',"Deleted '$filePath'."); }
         }
         return $aDeleted;
