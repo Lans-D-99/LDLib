@@ -25,7 +25,7 @@ class ConnectionPool {
     public function fill(int $n=-1) {
         if ($n < 0) $n = $this->capacities[$this->capacityLevel];
         $chosenLevel = -1;
-        foreach ($this->capacities as $cap) { $chosenLevel++; if ($cap > $n) break; }
+        foreach ($this->capacities as $cap) { $chosenLevel++; if ($cap >= $n) break; }
         $this->fillForLevel($chosenLevel);
     }
 
