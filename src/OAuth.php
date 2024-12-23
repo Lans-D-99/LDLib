@@ -9,6 +9,7 @@ use LDLib\Logger\Logger;
 use LDLib\Logger\LogLevel;
 use LDLib\OperationResult;
 use LDLib\SuccessType;
+use ReflectionEnum;
 
 enum OAuthScopes:string { // scopes are readonly by default
     case USER_BASIC = 'user:basic';
@@ -16,6 +17,16 @@ enum OAuthScopes:string { // scopes are readonly by default
 
 class OAuth {
     public static string $urlRegex = '/^https:\/\/\S*?\.\S*?(?:[\s)\[\]{},;"\':<]|\.\s|$)/i';
+    public static ?ReflectionEnum $scopesEnum = null;
+    
+    public static bool $initialized = false;
+
+    public static function init() {
+        if (self::$initialized) return;
+        self::$scopesEnum = new ReflectionEnum(OAuthScopes::class);
+        self::$initialized = true;
+    }
+
     public static function registerClient(LDPDO $pdo, int $userId, array $redirectURIs, string $clientName, ?string $website=null, ?string $description=null, ?string $logo=null):OperationResult {
         if (count($redirectURIs) < 1) return new OperationResult(ErrorType::INVALID_DATA,'Specify at least one redirect URI.');
 
@@ -45,7 +56,7 @@ class OAuth {
         }
 
         $pdo->query('COMMIT');
-        return new OperationResult(SuccessType::SUCCESS,'Successfully registered client.');
+        return new OperationResult(SuccessType::SUCCESS,"Successfully registered client. (Client ID: \"$clientId\")");
     }
 
     public static function requestAuthorization(LDPDO $pdo, string $clientId, string $responseType, string $redirectURI, array $scope, string $state):OperationResult {
@@ -56,7 +67,7 @@ class OAuth {
 
         // Check scope
         $finalScope = new Set();
-        foreach ($scope as $s) { $val = OAuthScopes::tryFrom($s); if ($val !== null) $finalScope->add($val->value); }
+        foreach ($scope as $s) { $val = self::checkIfEnumBackedValue($s); if ($val !== null) $finalScope->add($val); }
         if (count($finalScope) < 1) return new OperationResult(ErrorType::INVALID_DATA, 'No valid scope provided.');
         $finalScope = $finalScope->toArray();
         $finalScope = self::trimScopeValues($finalScope);
@@ -149,7 +160,7 @@ class OAuth {
             $finalScope = new Set();
             $grantedScope = explode(' ',$tokenRow['granted_scope']);
             $newScope = explode(' ',$scope);
-            foreach ($newScope as $s) { $val = OAuthScopes::tryFrom($s); if ($val !== null && in_array($s,$grantedScope)) $finalScope->add($val->value); }
+            foreach ($newScope as $s) { $val = self::checkIfEnumBackedValue($s); if ($val !== null && in_array($s,$grantedScope)) $finalScope->add($val); }
             if (count($finalScope) < 1) return new OperationResult(ErrorType::INVALID_DATA,'invalid_scope: No valid scope provided.',[],['body' => json_encode(['error' => 'invalid_scope'])]);
             $finalScope = $finalScope->toArray();
 
@@ -287,5 +298,14 @@ class OAuth {
         if (in_array('user',$scope)) foreach ($scope as $k => $v) if (preg_match('/^user:/',$v) > 0) unset($scope[$k]);
         return $scope;
     }
+
+    private static function checkIfEnumBackedValue(string $sCase) {
+        try {
+            foreach (self::$scopesEnum->getCases() as $case)  if ($case->getValue()->value == $sCase) return $sCase;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
 }
+OAuth::init();
 ?>
