@@ -3,6 +3,8 @@ namespace LDLib\Security;
 
 use LDLib\Cache\LDRedis;
 use LDLib\Database\LDPDO;
+use LDLib\OperationResult;
+use LDLib\SuccessType;
 
 class Security {
     public static function isRequestsLimitReached(string $remoteAddress, ?LDPDO $pdo=null, ?LDRedis $redis=null):bool {
@@ -126,6 +128,16 @@ class Security {
         $res = $redis->del("security:ip_bans:$remoteAddress");
         if ($autoCloseRedis) $redis->redis->close();
         return $res;
+    }
+
+    public static function reportSusIP(string $remoteAddress, int $points, string $reason, ?LDPDO $pdo=null):OperationResult {
+        $autoClosePDO = $pdo === null;
+        $pdo ??= new LDPDO();
+
+        $stmt = $pdo->prepare('INSERT INTO sec_sus_ip(remote_address,date,points,reason) VALUES (?,?,?,?)');
+        $stmt->execute([$remoteAddress,(new \DateTime('now'))->format('Y-m-d H:i:s'),$points,$reason]);
+        if ($autoClosePDO) $pdo->close();
+        return new OperationResult(SuccessType::SUCCESS);
     }
 }
 ?>
