@@ -67,6 +67,7 @@ interface IHTTPContext extends IContext {
     public function __construct(Server $server, Request $request, ?Response $response = null);
     public function deleteUploadedFiles();
     public function addServerTimingData(string $s);
+    public function getRealRemoteAddress();
 }
 
 interface IWSContext extends IContext {
