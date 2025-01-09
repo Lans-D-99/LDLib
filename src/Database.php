@@ -15,17 +15,20 @@ enum MariaDBError:int {
 class LDPDO {
     public ?\PDO $pdo;
     public array $locks = [];
+    public bool $skipTransactionCommands = false;
 
     public function __construct(public ?Context $context=null) {
         $this->pdo = PDO::getConnection();
     }
 
     public function query(string $query, ?int $fetchMode = null, ?int $cost=null):\PDOStatement|false {
+        if ($this->skipTransactionCommands && in_array(mb_trim($query), ['START TRANSACTION','COMMIT'])) return false;
         if ($this->context != null) $this->context->dbcost += $cost ?? 1;
         return $this->pdo->query($query,$fetchMode);
     }
 
     public function prepare(string $query, array $options=[], ?int $cost=null):\PDOStatement|false {
+        if ($this->skipTransactionCommands && in_array(mb_trim($query), ['START TRANSACTION','COMMIT'])) return false;
         if ($this->context != null) $this->context->dbcost += $cost ?? 1;
         return $this->pdo->prepare($query,$options);
     }
