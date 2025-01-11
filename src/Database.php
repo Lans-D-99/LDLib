@@ -22,13 +22,13 @@ class LDPDO {
     }
 
     public function query(string $query, ?int $fetchMode = null, ?int $cost=null):\PDOStatement|false {
-        if ($this->skipTransactionCommands && in_array(mb_trim($query), ['START TRANSACTION','COMMIT'])) return false;
+        if ($this->skipTransactionCommands && self::isTransactionCommand($query)) return false;
         if ($this->context != null) $this->context->dbcost += $cost ?? 1;
         return $this->pdo->query($query,$fetchMode);
     }
 
     public function prepare(string $query, array $options=[], ?int $cost=null):\PDOStatement|false {
-        if ($this->skipTransactionCommands && in_array(mb_trim($query), ['START TRANSACTION','COMMIT'])) return false;
+        if ($this->skipTransactionCommands && self::isTransactionCommand($query)) return false;
         if ($this->context != null) $this->context->dbcost += $cost ?? 1;
         return $this->pdo->prepare($query,$options);
     }
@@ -47,6 +47,7 @@ class LDPDO {
 
     public function toPool(bool $rollback=false) {
         if ($rollback) $this->query('ROLLBACK');
+        $this->skipTransactionCommands = false;
         WorkerContext::$pdoConnectionPool->put($this);
     }
 
@@ -64,6 +65,10 @@ class LDPDO {
         } catch (PDOException $e) {
             $this->pdo = PDO::getConnection();
         }
+    }
+
+    public static function isTransactionCommand(string $s):bool {
+        return in_array(mb_trim($s), ['START TRANSACTION','COMMIT','ROLLBACK']) || str_starts_with($s,'SAVEPOINT') || str_starts_with($s,'SET TRANSACTION');
     }
 }
 
