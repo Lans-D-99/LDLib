@@ -3,7 +3,6 @@
     "description":"A library for LDFramework.",
     "version": "0.4.1",
     "require": {
-        "php-ds/php-ds": "1.5.*",
         "swoole/ide-helper": "~5.0.0",
         "vlucas/phpdotenv": "5.6.*",
         "webonyx/graphql-php": "15.11.2",
