@@ -2,7 +2,7 @@
 namespace LDLib\OAuth;
 
 use Ds\Set;
-use LDLib\Cache\LDRedis;
+use LDLib\Cache\LDValkey;
 use LDLib\Database\LDPDO;
 use LDLib\ErrorType;
 use LDLib\Logger\Logger;
@@ -87,9 +87,9 @@ class OAuth {
 
         // Finish
         $authAttemptId = self::makeAuthorizationId($clientId);
-        $redis = new LDRedis();
+        $valkey = new LDValkey();
         $key = "oauth:clientAuthorization:$responseType:$authAttemptId";
-        if (!$redis->hMSet($key,[
+        if (!$valkey->hMSet($key,[
             'client_id' => $clientRow['client_id'],
             'client_name' => $clientRow['client_name'],
             'client_type' => $clientRow['client_type'],
@@ -100,16 +100,16 @@ class OAuth {
             'scope' => $finalScope,
             'state' => $state
         ])) return new OperationResult(ErrorType::UNKNOWN);
-        $redis->expire($key,600);
+        $valkey->expire($key,600);
 
         $fullId = $responseType.'_'.$authAttemptId;
         return new OperationResult(SuccessType::SUCCESS,"Client can be authorized.",[],['clientRow' => $clientRow, 'scope' => $finalScope, 'authId' => $fullId]);
     }
 
-    public static function processAuthorizationRequest_code(LDPDO $pdo, LDRedis $redis, int $userId, string $authId, bool $allowed):OperationResult {
-        $authRequest = self::getAuthorizationRequest($redis, $authId);
+    public static function processAuthorizationRequest_code(LDPDO $pdo, LDValkey $valkey, int $userId, string $authId, bool $allowed):OperationResult {
+        $authRequest = self::getAuthorizationRequest($valkey, $authId);
         if ($authRequest == null) return new OperationResult(ErrorType::NOT_FOUND,'Authorization request not found.');
-        self::deleteAuthorizationRequest($redis,$authId);
+        self::deleteAuthorizationRequest($valkey,$authId);
 
         $redirectURI = $authRequest['redirect_uri'];
         $firstChar = strpos($redirectURI,'?') === false ? '?' : '&';
@@ -130,7 +130,7 @@ class OAuth {
             }
             $redirectURI .= $firstChar.'code='.urlencode($code);
             $key = "oauth:authorizationCode:$code";
-            $redis->hMSet($key,[
+            $valkey->hMSet($key,[
                 'code' => $code,
                 'client_id' => $authRequest['client_id'],
                 'user_id' => $userId,
@@ -138,7 +138,7 @@ class OAuth {
                 'scope' => $authRequest['scope'],
                 'uses' => 0
             ]);
-            $redis->expire($key,300);
+            $valkey->expire($key,300);
             if ($authRequest['state'] != null) $redirectURI .= '&state='.$authRequest['state'];
             return new OperationResult(SuccessType::SUCCESS,'Authorization granted.',[],['url' => $redirectURI, 'authRequest' => $authRequest]);
         }
@@ -190,7 +190,7 @@ class OAuth {
         return new OperationResult(SuccessType::SUCCESS,null,[],['body' => $body]);
     }
 
-    public static function requestAccessToken(LDPDO $pdo, LDRedis $redis, string $grantType, string $clientId, string $clientSecret, string $code, string $redirectURI):OperationResult {
+    public static function requestAccessToken(LDPDO $pdo, LDValkey $valkey, string $grantType, string $clientId, string $clientSecret, string $code, string $redirectURI):OperationResult {
         if ($grantType != 'authorization_code') return new OperationResult(ErrorType::INVALID_DATA,'unsupported_grant_type',[],['body' => json_encode(['error' => 'unsupported_grant_type'])]);
 
         // Check if client registered
@@ -202,12 +202,12 @@ class OAuth {
         $key = "oauth:authorizationCode:$code";
 
         // Check if code is for the client
-        $codeData = $redis->redis->hGetAll($key);
+        $codeData = $valkey->valkey->hGetAll($key);
         if ($codeData == false) return new OperationResult(ErrorType::NOT_FOUND,'invalid_grant: Authorization code not found.',[],['body' => json_encode(['error' => 'invalid_grant'])]);
         if ($codeData['client_id'] !== $clientId) return new OperationResult(ErrorType::INVALID_DATA,'invalid_grant: Authorization code not found.',[],['body' => json_encode(['error' => 'invalid_grant'])]);
 
         // Check code usage
-        $res = $redis->redis->hIncrBy($key,'uses',1);
+        $res = $valkey->valkey->hIncrBy($key,'uses',1);
         if ($res == false) return new OperationResult(ErrorType::NOT_FOUND,'invalid_grant: Authorization code not found.',[],['body' => json_encode(['error' => 'invalid_grant'])]);
         else if ($res != 1) {
             $stmt = $pdo->prepare('DELETE FROM oauth_access_tokens WHERE client_id=? AND associated_code=?');
@@ -244,17 +244,17 @@ class OAuth {
         return new OperationResult(SuccessType::SUCCESS,null,[],['body' => $body]);
     }
 
-    public static function getAuthorizationRequest(LDRedis $redis, string $authId) {
+    public static function getAuthorizationRequest(LDValkey $valkey, string $authId) {
         $authId = preg_replace('/^code_/','',$authId);
         $key = "oauth:clientAuthorization:code:$authId";
-        $authRequest = $redis->redis->hGetAll($key);
+        $authRequest = $valkey->valkey->hGetAll($key);
         if ($authRequest == false || count($authRequest) == 0) return null;
         return $authRequest;
     }
 
-    public static function deleteAuthorizationRequest(LDRedis $redis, string $authId) {
+    public static function deleteAuthorizationRequest(LDValkey $valkey, string $authId) {
         $authId = preg_replace('/^code_/','',$authId);
-        return $redis->redis->del("oauth:clientAuthorization:code:$authId");
+        return $valkey->valkey->del("oauth:clientAuthorization:code:$authId");
     }
 
     public static function makeAuthorizationId(string $clientId, ?string $responseType=null) {

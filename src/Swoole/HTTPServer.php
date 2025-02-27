@@ -215,7 +215,7 @@ class HTTPServer {
             require_once $libDir.'/Network.php';
             require_once $libDir.'/OAuth.php';
             require_once $libDir.'/PostHog.php';
-            require_once $libDir.'/Redis.php';
+            require_once $libDir.'/Valkey.php';
             require_once $libDir.'/Security.php';
             require_once $libDir.'/User.php';
             require_once $libDir.'/GraphQL.php';

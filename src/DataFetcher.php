@@ -3,7 +3,7 @@ namespace LDLib\DataFetcher;
 
 use LDLib\Context\IWSContext;
 use LDLib\Database\LDPDO;
-use LDLib\Cache\LDRedis;
+use LDLib\Cache\LDValkey;
 
 class DataFetcher {
     public static string $fetcher;
@@ -50,15 +50,15 @@ class DataFetcher {
         return self::$fetcher::{'removeSubscription'}($context,$subName,$subData);
     }
 
-    public static function exec(LDPDO $pdo, LDRedis $redis) {
-        return self::$fetcher::{'exec'}($pdo,$redis);
+    public static function exec(LDPDO $pdo, LDValkey $valkey) {
+        return self::$fetcher::{'exec'}($pdo,$valkey);
     }
 }
 
 interface IHTTPDataFetcher {
     public static function init();
     public static function init2();
-    public static function exec(LDPDO $pdo, LDRedis $redis);
+    public static function exec(LDPDO $pdo, LDValkey $valkey);
 }
 
 interface IWSDataFetcher extends IHTTPDataFetcher {

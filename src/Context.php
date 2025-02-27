@@ -1,7 +1,7 @@
 <?php
 namespace LDLib\Context;
 
-use LDLib\Cache\LDRedis;
+use LDLib\Cache\LDValkey;
 use LDLib\User\User;
 use Swoole\Http\Server;
 use Swoole\WebSocket\Server as WSServer;
@@ -18,8 +18,8 @@ abstract class Context {
     public array $logs = [];
 
     public int $dbcost = 0;
-    public int $nRedisGet = 0;
-    public int $nRedisSet = 0;
+    public int $nValkeyGet = 0;
+    public int $nValkeySet = 0;
 
     public array $gqlPathTimes = [];
 
@@ -33,8 +33,8 @@ abstract class Context {
         return WorkerContext::$pdoConnectionPool->get($this);
     }
 
-    public function getLDRedis():LDRedis|false {
-        return WorkerContext::$redisConnectionPool->get($this);
+    public function getLDValkey():LDValkey|false {
+        return WorkerContext::$valkeyConnectionPool->get($this);
     }
 
     public function logQueryPathTime(array $path, ?float $time=null) {        
@@ -57,7 +57,7 @@ abstract class Context {
 
 interface IContext {
     public function getLDPDO():LDPDO|false;
-    public function getLDRedis():LDRedis|false;
+    public function getLDValkey():LDValkey|false;
     public function getAuthenticatedUser():?IIdentifiableUser;
     public function getGraphQLPathTimes():array;
     public function logQueryPathTime(array $a, ?float $time=null);
@@ -74,7 +74,7 @@ interface IWSContext extends IContext {
     public function __construct(WSServer $server, Frame $frame);
     public function getConnInfo();
     public function getSubscriptionRequest():?SubscriptionRequest;
-    public function getLDRedis():LDRedis|false;
+    public function getLDValkey():LDValkey|false;
 }
 
 interface IOAuthContext extends IContext {

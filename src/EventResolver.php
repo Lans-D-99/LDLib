@@ -1,7 +1,7 @@
 <?php
 namespace LDLib\Event;
 
-use LDLib\Cache\LDRedis;
+use LDLib\Cache\LDValkey;
 use LDLib\DataFetcher\DataFetcher;
 use LDLib\Logger\Logger;
 use LDLib\Logger\LogLevel;
@@ -24,25 +24,25 @@ class EventResolver {
     }
 
     public static function connIteration(string $keyPattern, callable $onMatchFound) {
-        $redis = (new LDRedis())->redis;
+        $valkey = (new LDValkey())->valkey;
         $i = null;
         while ($i !== 0) {
-            $keys = $redis->scan($i,$keyPattern,200);
+            $keys = $valkey->scan($i,$keyPattern,200);
             $aToRemove = [];
             foreach ($keys as $key) {
                 $keyParts = explode(':',$key);
                 $conns = DataFetcher::getConnInfos();
                 foreach ($conns as $conn) {
                     if ($keyParts[2] == $conn['fd'] && $keyParts[3] == $conn['connect_time']) {
-                        $onMatchFound($redis->get($key),$conn);
+                        $onMatchFound($valkey->get($key),$conn);
                         continue 2;
                     }
                 }
                 $aToRemove[] = $key;
             }
-            $redis->del($aToRemove);
+            $valkey->del($aToRemove);
         }
-        $redis->close();
+        $valkey->close();
     }
 }
 ?>

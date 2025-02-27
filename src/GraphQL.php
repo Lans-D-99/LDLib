@@ -118,8 +118,8 @@ class GraphQL {
                 $output['dbcost'] = $context->dbcost/100;
                 $output['queryComplexity'] = $queryComplexityRule->getQueryComplexity();
                 $output['cache'] = [
-                    'redis_get' => $context->nRedisGet,
-                    'redis_set' => $context->nRedisSet
+                    'valkey_get' => $context->nValkeyGet,
+                    'valkey_set' => $context->nValkeySet
                 ];
             }
 
@@ -179,7 +179,7 @@ class GraphQL {
         self::$defaultResolver = $defaultResolver ??= fn() => null;
         self::$errorFormatter = $errorFormatter ??= function(Error $err) {
             WorkerContext::$pdoConnectionPool->fill();
-            WorkerContext::$redisConnectionPool->fill();
+            WorkerContext::$valkeyConnectionPool->fill();
             $err1Type = $err::class;
             if ($err->getPrevious() !== null) {
                 $err2Type = $err->getPrevious() != null ? $err->getPrevious()::class : '???';

@@ -34,9 +34,9 @@ class SwoolePromiseAdapter implements PromiseAdapter {
 
     public function all(iterable $promisesOrValues):Promise {
         $pdo = WorkerContext::$pdoConnectionPool->get();
-        $redis = WorkerContext::$redisConnectionPool->get();
-        DataFetcher::exec($pdo,$redis);
-        $pdo->toPool(); $redis->toPool();
+        $valkey = WorkerContext::$valkeyConnectionPool->get();
+        DataFetcher::exec($pdo,$valkey);
+        $pdo->toPool(); $valkey->toPool();
 
         $res = [];
         $wg = new WaitGroup();
