@@ -39,7 +39,7 @@ class SwoolePromise {
         return $o;
     }
 
-    public function then(callable $onFulfilled=null, callable $onRejected=null):SwoolePromise {
+    public function then(?callable $onFulfilled=null, ?callable $onRejected=null):SwoolePromise {
         if ($onFulfilled == null && $onRejected == null) throw new \RuntimeException('Must provide at least one chain callback.');
 
         $newPromise = new SwoolePromise();

@@ -103,7 +103,7 @@ function graphql_query(string $json, string $sid=''):array {
     return ['res' => $v,'httpCode' => $httpCode];
 }
 
-function curl_fetch(string $url, array $postFields = null) {
+function curl_fetch(string $url, ?array $postFields = null) {
     $localMode = (bool)$_SERVER['LD_LOCAL'];
     $ch = curl_init($url);
 

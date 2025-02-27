@@ -7,7 +7,7 @@ use SoftCreatR\MimeDetector\MimeDetector;
 use Swoole\Http\Request;
 
 class Utils {
-    public static function getRootLink(string $sub = null) {
+    public static function getRootLink(?string $sub = null) {
         if (isset($_SERVER['LD_USE_DYNAMIC_ROOT_LINK']) && (bool)$_SERVER['LD_USE_DYNAMIC_ROOT_LINK']) {
             $root =  $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'];
         } else {

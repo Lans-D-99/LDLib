@@ -111,7 +111,7 @@ enum ErrorType {
 class TypedException extends \Exception implements \GraphQL\Error\ClientAware {
     private ErrorType $errorType;
 
-    public function __construct(string $message, ErrorType $errorType, $code=0, \Throwable $previous = null) {
+    public function __construct(string $message, ErrorType $errorType, $code=0, ?\Throwable $previous = null) {
         $this->errorType = $errorType;
         parent::__construct($message, $code, $previous);
     }

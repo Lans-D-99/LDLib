@@ -22,10 +22,10 @@ class GraphQLPrimary extends \GraphQL\GraphQL {
         $source,
         $rootValue = null,
         $context = null,
-        array $variableValues = null,
-        string $operationName = null,
-        callable $fieldResolver = null,
-        array $validationRules = null,
+        ?array $variableValues = null,
+        ?string $operationName = null,
+        ?callable $fieldResolver = null,
+        ?array $validationRules = null,
     ): Promise {
         try {
             $queryHash = null;

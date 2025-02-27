@@ -8,7 +8,7 @@ use GraphQL\Utils\TypeInfo;
 use Swoole\Coroutine\WaitGroup;
 
 class DocumentValidator extends \GraphQL\Validator\DocumentValidator {
-    public static function validate(Schema $schema, DocumentNode $ast, array $rules=null, TypeInfo $typeInfo=null):array {
+    public static function validate(Schema $schema, DocumentNode $ast, ?array $rules=null, ?TypeInfo $typeInfo=null):array {
         $rules ??= static::allRules();
         if ($rules === []) return [];
         $typeInfo ??= new TypeInfo($schema);

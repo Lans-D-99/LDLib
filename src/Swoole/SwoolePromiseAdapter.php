@@ -16,7 +16,7 @@ class SwoolePromiseAdapter implements PromiseAdapter {
         return new Promise($thenable, $this);
     }
 
-    public function then(Promise $promise, callable $onFulfilled=null, callable $onRejected=null):Promise {
+    public function then(Promise $promise, ?callable $onFulfilled=null, ?callable $onRejected=null):Promise {
         return new Promise($promise->adoptedPromise->then($onFulfilled,$onRejected),$this);
     }
 
