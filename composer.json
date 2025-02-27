@@ -1,7 +1,7 @@
 {
     "name": "lansd/ldlib",
     "description":"A library for LDFramework.",
-    "version": "0.4.1",
+    "version": "0.5.0",
     "require": {
         "swoole/ide-helper": "~5.0.0",
         "vlucas/phpdotenv": "5.6.*",
