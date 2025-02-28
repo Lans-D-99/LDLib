@@ -16,40 +16,10 @@ use Swoole\Coroutine;
 use function LDLib\Net\get_curl_handle;
 
 class AWS {
-    public static ?LDS3Client2 $client;
     public static bool $initialized = false;
-
-    public static function init() {
-        if (self::$initialized) return;
-        self::$initialized = true;
-        try {
-            self::$client = new LDS3Client2(new \Aws\S3\S3Client([
-                'region'      => $_SERVER['LD_AWS_REGION'],
-                'version'     => '2006-03-01',
-                'credentials' => new \Aws\Credentials\Credentials($_SERVER['LD_AWS_ACCESS_KEY'],$_SERVER['LD_AWS_SECRET_KEY']),
-                'http_handler' => new GuzzleHandler(new \GuzzleHttp\Client(['handler' => HandlerStack::create(new CurlHandler())])),
-            ]));
-        } catch (\Exception $e) {
-            Logger::logThrowable($e);
-            self::$client = null;
-        }
-    }
 
     public static function getS3Client():LDS3Client {
         return new LDS3Client();
-    }
-
-    public static function getS3Client2():?LDS3Client2 {
-        if (!self::$initialized) self::init();
-        return self::$client;
-    }
-
-    public static function extractMetadata(\Aws\Result $result, ?string $key=null):array {
-        return [
-            '_Key' => $key,
-            'ContentLength' => $result['ContentLength']??null,
-            'ContentType' => $result['ContentType']??null
-        ];
     }
 }
 
@@ -400,107 +370,6 @@ class LDS3Client {
         $signature = hash_hmac('sha256',$stringToSign,hash_hmac('sha256','aws4_request',hash_hmac('sha256',$service,hash_hmac('sha256',$region,hash_hmac('sha256',$smallDate,"AWS4".$secretKey,true),true),true),true));
 
         return "AWS4-HMAC-SHA256 Credential=$accessKey/$smallDate/$region/$service/aws4_request,SignedHeaders=$signedHeaders,Signature=$signature";
-    }
-}
-
-class LDS3Client2 {
-    public function __construct(public ?\Aws\S3\S3Client $client) { }
-
-    public static bool $busy = false;
-    public function getObject(string $bucketName, string $key, ?string $range=null) {
-        while (self::$busy) Coroutine::sleep(0.05);
-        self::$busy = true;
-        try {
-            return $this->client->getObject([
-                'Bucket' => $bucketName,
-                'Key' => $key,
-                'Range' => $range
-            ]);
-        } finally {
-            self::$busy = false;
-        }
-    }
-
-    public function putObject(string $bucketName, string $key, array $file, LDPDO $conn, string $tableName, ?array $more=null, ?callable $onRename=null):OperationResult {
-        // Get file infos
-        $fileData = file_get_contents($file['tmp_name']);
-        $fileSize = $file['size'];
-        $mimeType = Utils::getMimeType($file);
-        $more ??= [];
-        $more['Metadata'] ??= [];
-        $more['Metadata']['fileName'] ??= $file['name'];
-
-        $deleteFromDatabase = function($key) use($conn,$tableName) {
-            try {
-                $stmt = $conn->prepare("DELETE FROM $tableName WHERE obj_key=?");
-                $stmt->execute([$key]);
-            } catch (\Throwable $t) {
-                Logger::log(LogLevel::ERROR, 'Database', "Couldn't unregister '$key'.");
-                Logger::logThrowable($t);
-            }
-        };
-
-        // Rename key if similar name found?
-        try {
-            $stmt = $conn->prepare("SELECT * FROM $tableName WHERE obj_key=?");
-            $stmt->execute([$key]);
-            if ($stmt->fetch() !== false) $key = isset($onRename) ? $onRename($key) : ((string)microtime(true)).'_'.$key;
-        } catch (\Throwable $t) {
-            Logger::log(LogLevel::FATAL, 'Database', "Couldn't verify key.");
-            Logger::logThrowable($t);
-            return new OperationResult(ErrorType::DATABASE_ERROR, "Couldn't verify key.");
-        }
-
-        // Register object in database
-        try {
-            $stmt = $conn->prepare("INSERT INTO $tableName (obj_key,size,mime_type,status,metadata) VALUES (?,?,?,?,?)");
-            $stmt->execute([$key,$fileSize,$mimeType,'Unverified',(isset($more['Metadata']) ? json_encode($more['Metadata']) : null)]);
-        } catch (\Throwable $t) {
-            Logger::log(LogLevel::ERROR, 'Database', "Couldn't register object '$key' in database.");
-            Logger::logThrowable($t);
-            return new OperationResult(ErrorType::DATABASE_ERROR, "Couldn't register object in database.");
-        }
-
-        // Configure then put object
-        $a = [
-            'Bucket' => $bucketName,
-            'Key' => $key,
-            'Body' => $fileData,
-            'ChecksumAlgorithm' => 'SHA256',
-            'ContentType' => $mimeType
-        ];
-        foreach ($more as $k => $v) $a[$k] = $v;
-        try {
-            while (self::$busy) Coroutine::sleep(0.05);
-            self::$busy = true;
-            $res = $this->client->putObject($a);
-            self::$busy = false;
-        } catch (\Throwable $t) {
-            Logger::log(LogLevel::ERROR, 'Database', "Couldn't put object with key '$key'.");
-            Logger::logThrowable($t);
-            $deleteFromDatabase($key);
-            return new OperationResult(ErrorType::AWS_ERROR, "Couldn't put object.");
-        }
-
-        // Return if bad AWS result status code
-        if (($res['@metadata']['statusCode']??null) != 200) {
-            Logger::log(LogLevel::ERROR, 'AWS - S3', "Bad AWS status code. ({$res['@metadata']['statusCode']})");
-            $deleteFromDatabase($key);
-            return new OperationResult(ErrorType::AWS_ERROR, "Bad AWS status code.");
-        }
-
-        // Validate object in database
-        try {
-            $stmt = $conn->prepare("UPDATE $tableName SET status='Verified' WHERE obj_key=?");
-            $stmt->execute([$key]);
-        } catch (\Throwable $t) {
-            Logger::log(LogLevel::ERROR, 'AWS - S3', "Couldn't validate object '$key' in database.");
-            Logger::logThrowable($t);
-            $deleteFromDatabase($key);
-            return new OperationResult(ErrorType::DATABASE_ERROR, "Couldn't validate object in database.");
-        }
-
-        return new OperationResult(SuccessType::SUCCESS,null,[],[$key]);
     }
 }
 ?>
