@@ -225,7 +225,7 @@ class Utils {
     public static function getMimeType(array $file):string {
         $mimeType = mime_content_type($file['tmp_name']);
         if ($mimeType !== 'text/plain') {
-            try { $mimeType2 = (new MimeDetector())->setFile($file['tmp_name'])->getMimeType(); }
+            try { $mimeType2 = (new MimeDetector($file['tmp_name']))->getMimeType(); }
             catch (\Exception $e) {
                 $mimeType2 = null;
                 Logger::log(LogLevel::WARN,'Mime Detector',$e->getMessage());

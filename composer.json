@@ -8,7 +8,7 @@
         "webonyx/graphql-php": "15.19.*",
         "minishlink/web-push": "9.0.*",
         "aws/aws-sdk-php": "3.321.*",
-        "softcreatr/php-mime-detector": "3.2.*"
+        "softcreatr/php-mime-detector": "4.0.0"
     },
     "suggest" : {
         "php": ">=8.3"
