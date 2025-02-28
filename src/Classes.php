@@ -90,6 +90,7 @@ enum SuccessType {
 enum ErrorType {
     case AWS_ERROR;
     case DATABASE_ERROR;
+    case VALKEY_ERROR;
     case DBLOCK_TAKEN;
     case DUPLICATE;
     case EXPIRED;
@@ -102,6 +103,7 @@ enum ErrorType {
     case NOT_AUTHENTICATED;
     case NOT_ENOUGH_PRIVILEGES;
     case NOT_FOUND;
+    case NOT_IMPLEMENTED;
     case PROHIBITED;
     case USELESS;
 
