@@ -76,6 +76,17 @@ class LDWebPush {
     }
 }
 
+function curl_quickRequest(string $url, $opts) {
+    $ch = curl_init($url);
+    curl_setopt_array($ch,$opts);
+    $v = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    if (!$v) trigger_error(curl_error($ch));
+    
+    return ['ch' => $ch, 'res' => $v, 'httpCode' => $httpCode];
+}
+
 function graphql_query(string $json, string $sid=''):array {
     $localMode = (bool)$_SERVER['LD_LOCAL'];
     $ch = curl_init($_SERVER['LD_LINK_GRAPHQL']);
