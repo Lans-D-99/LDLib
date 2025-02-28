@@ -17,7 +17,7 @@ class Executor extends ReferenceExecutor {
     public static ExecutionContext|array $exeContext2;
 
     public static function create2(PromiseAdapter $promiseAdapter, Schema $schema, DocumentNode $documentNode, $rootValue,
-        $contextValue, array $variableValues, ?string $operationName, callable $fieldResolver):ExecutorImplementation {
+        $contextValue, array $variableValues, ?string $operationName, callable $fieldResolver, callable $argsMapper):ExecutorImplementation {
         self::$exeContext2 = parent::buildExecutionContext(
             $schema,
             $documentNode,
@@ -26,6 +26,7 @@ class Executor extends ReferenceExecutor {
             $variableValues,
             $operationName,
             $fieldResolver,
+            $argsMapper ?? \GraphQL\Executor\Executor::getDefaultArgsMapper(),
             $promiseAdapter
         );
 
@@ -50,13 +51,13 @@ class Executor extends ReferenceExecutor {
     }
 
     #[\Override]
-    protected function executeFields(ObjectType $parentType, $rootValue, array $path, \ArrayObject $fields, $contextValue) {
+    protected function executeFields(ObjectType $parentType, $rootValue, array $path, array $unaliasedPath, \ArrayObject $fields, $contextValue) {
         $containsPromise = false;
         $results = [];
         foreach ($fields as $responseName => $fieldNodes) {
             $fieldPath = $path;
             $fieldPath[] = $responseName;
-            $result = $this->resolveField($parentType, $rootValue, $fieldNodes, $fieldPath, ($contextValue instanceof ScopedContext ? $contextValue->clone() : $contextValue));
+            $result = $this->resolveField($parentType, $rootValue, $fieldNodes, $responseName, $fieldPath, $unaliasedPath, ($contextValue instanceof ScopedContext ? $contextValue->clone() : $contextValue));
 
             if ($result === static::$UNDEFINED) {
                 continue;
