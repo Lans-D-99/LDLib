@@ -207,6 +207,7 @@ class WSServer {
             require_once $libDir.'/EventResolver.php';
             require_once $libDir.'/Magick.php';
             require_once $libDir.'/Network.php';
+            require_once $libDir.'/OpenSSL.php';
             require_once $libDir.'/PostHog.php';
             require_once $libDir.'/Valkey.php';
             require_once $libDir.'/Security.php';
