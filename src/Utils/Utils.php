@@ -3,6 +3,7 @@ namespace LDLib\Utils;
 
 use LDLib\Logger\Logger;
 use LDLib\Logger\LogLevel;
+use LDLib\Server\ServerContext;
 use SoftCreatR\MimeDetector\MimeDetector;
 use Swoole\Http\Request;
 
@@ -252,6 +253,18 @@ class Utils {
     public static function getRealRemoteAddress(Request $request):string {
         return isset($request->header['x-ld-cloudfront']) && in_array($request->header['x-ld-cloudfront'],explode(',',$_SERVER['LD_AWS_TRUSTED_CLOUDFRONTS']??'')) ?
             $request->header['x-forwarded-for'] : $request->server['remote_addr'];
+    }
+
+    public static int $fileN = 0;
+    public static function getUniqueFileName(string $prefix='file', string $suffix='') {
+        if (self::$fileN == 0) self::$fileN = random_int(1,30000);
+        if (self::$fileN > 100000) self::$fileN = random_int(1,30000);
+        self::$fileN++;
+        return "$prefix-".microtime(true).'-'.self::$fileN.$suffix;
+    }
+
+    public static function getTempFilePath(string $name='file') {
+        return ServerContext::$tempPath.'/'.self::getUniqueFileName($name);
     }
 }
 ?>

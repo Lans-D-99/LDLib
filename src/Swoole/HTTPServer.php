@@ -34,6 +34,7 @@ class HTTPServer {
         $dotenv = \Dotenv\Dotenv::createMutable(self::$rootPath);
         $dotenv->load();
 
+        ServerContext::$tempPath = self::$rootPath.'/'.($_SERVER['LD_TEMP_PATH']??'tmp');
         DataFetcher::init();
 
         self::$server = new Server($host,$port,$mode,$sockType);

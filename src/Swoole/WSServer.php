@@ -31,6 +31,8 @@ class WSServer {
         $dotenv = \Dotenv\Dotenv::createMutable(self::$rootPath);
         $dotenv->load();
 
+        ServerContext::$tempPath = self::$rootPath.'/'.$_SERVER['LD_TEMP_PATH'];
+
         $wsInitVal = $_SERVER['LD_WEBSOCKET_INIT']??'';
         switch ($wsInitVal) {
             case 'full': DataFetcher::init(); DataFetcher::wsInit(); break;

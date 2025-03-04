@@ -7,6 +7,7 @@ use Swoole\Http\Response;
 
 class ServerContext {
     public static Table $workerDatas;
+    public static string $tempPath;
     // public static \Swoole\Http\Server|\Swoole\WebSocket\Server $server;
 
     public static function init() {
