@@ -31,7 +31,7 @@ class GraphQLPrimary extends \GraphQL\GraphQL {
             $queryHash = null;
             try {
                 $queryHash = crc32($source);
-                if (is_array($variableValues)) foreach ($variableValues as $v) $queryHash = crc32($queryHash. (is_array($v) ? implode(',',$v) : (string)$v));
+                if (is_array($variableValues)) foreach ($variableValues as $v) $queryHash = crc32($queryHash. (is_array($v) ? json_encode($v) : (string)$v));
             } catch (\Exception $e) { Logger::logThrowable($e); }
             
             $valkey = $queryHash != null ? new LDValkey() : null;
