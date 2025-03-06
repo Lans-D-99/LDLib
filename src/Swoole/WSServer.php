@@ -205,6 +205,8 @@ class WSServer {
             require_once $libDir.'/Database.php';
             require_once $libDir.'/FFMPEG.php';
             require_once $libDir.'/EventResolver.php';
+            require_once $libDir.'/Git.php';
+            require_once $libDir.'/Github.php';
             require_once $libDir.'/Magick.php';
             require_once $libDir.'/Network.php';
             require_once $libDir.'/OpenSSL.php';

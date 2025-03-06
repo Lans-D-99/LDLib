@@ -200,6 +200,8 @@ class HTTPServer {
             require_once $libDir.'/Swoole/WorkerContext.php';
             require_once $libDir.'/Swoole/SwoolePromise.php';
             require_once $libDir.'/Swoole/SwoolePromiseAdapter.php';
+            require_once $libDir.'/Git/Git.php';
+            require_once $libDir.'/Git/Github.php';
             require_once $libDir.'/GraphQL/Executor.php';
             require_once $libDir.'/GraphQL/Rules/Limiter.php';
             require_once $libDir.'/GraphQL/Rules/QueryComplexity.php';
@@ -221,6 +223,7 @@ class HTTPServer {
             require_once $libDir.'/Security.php';
             require_once $libDir.'/User.php';
             require_once $libDir.'/GraphQL.php';
+            if (isset($_SERVER['LD_LOCAL_GIT_PATH'])) \LDLib\Git\Git::init($_SERVER['LD_LOCAL_GIT_PATH']);
             WorkerContext::init();
             if (isset($onWorkerStart)) $onWorkerStart();
             if ($workerId == 0) DataFetcher::init2();
