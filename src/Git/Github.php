@@ -23,13 +23,16 @@ class Github {
                                 history(first:$n) {
                                     edges {
                                         node {
+                                            oid
                                             message
+                                            messageBody
                                             authoredDate
                                             committedDate
                                             author {
                                                 avatarUrl
                                                 name
                                                 email
+                                                date
                                             }
                                         }
                                     }
