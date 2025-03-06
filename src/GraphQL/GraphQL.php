@@ -26,12 +26,17 @@ class GraphQLPrimary extends \GraphQL\GraphQL {
         ?string $operationName = null,
         ?callable $fieldResolver = null,
         ?array $validationRules = null,
+        bool $useMD5ForQueryHash = false
     ): Promise {
         try {
             $queryHash = null;
             try {
-                $queryHash = crc32($source);
-                if (is_array($variableValues)) foreach ($variableValues as $v) $queryHash = crc32($queryHash. (is_array($v) ? json_encode($v) : (string)$v));
+                $queryHash = $useMD5ForQueryHash ? md5($source) : crc32($source);
+                if (is_array($variableValues)) {
+                    $json = json_encode($variableValues);
+                    if ($json === false) throw new \Exception("Couldn't json_encode variableValues. json:".print_r($variableValues,true));
+                    $queryHash = $useMD5ForQueryHash ? md5($queryHash.$json) : md5($queryHash.$json);
+                }
             } catch (\Exception $e) { Logger::logThrowable($e); }
             
             $valkey = $queryHash != null ? new LDValkey() : null;

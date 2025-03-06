@@ -43,7 +43,7 @@ class GraphQL {
         self::$rules = $rules;
     }
 
-    public static function processQuery(IHTTPContext|IWSContext|IOAuthContext $context) {
+    public static function processQuery(IHTTPContext|IWSContext|IOAuthContext $context, bool $useMD5ForQueryHash=false):void {
         $tGraphQL = microtime(true);
         $isDebug = (bool)$_SERVER['LD_DEBUG'];
         $isHTTP = $context instanceof IHTTPContext;
@@ -101,7 +101,7 @@ class GraphQL {
         $rules[] = new MutationLimiter($user == null ? (int)$_SERVER['LD_SEC_BASE_SIMULT_MUTATION_LIMIT'] : (int)$_SERVER['LD_SEC_USERS_SIMULT_MUTATION_LIMIT']);
 
         Executor::setImplementationFactory(fn(...$args) => \LdLib\GraphQL\Executor::create2(...$args));
-        $promise = \LDLib\GraphQL\GraphQLPrimary::promiseToExecute(new SwoolePromiseAdapter(), self::$schema, $gqlQuery, null, $context, $gqlVariables, $gqlOperationName, self::$defaultResolver, $rules);
+        $promise = \LDLib\GraphQL\GraphQLPrimary::promiseToExecute(new SwoolePromiseAdapter(), self::$schema, $gqlQuery, null, $context, $gqlVariables, $gqlOperationName, self::$defaultResolver, $rules, $useMD5ForQueryHash);
 
         $promise->then(function(\GraphQL\Executor\ExecutionResult $result) use(&$isDebug, &$context, &$tGraphQL, $isHTTP, $queryComplexityRule, $user) {
             if ($isHTTP) $context->deleteUploadedFiles();
