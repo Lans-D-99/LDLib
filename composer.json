@@ -2,6 +2,7 @@
     "name": "lansd/ldlib",
     "description":"A library for LDFramework.",
     "version": "0.8.1",
+    "license": "Apache-2.0",
     "require": {
         "swoole/ide-helper": "~6.0.0",
         "vlucas/phpdotenv": "5.6.*",
