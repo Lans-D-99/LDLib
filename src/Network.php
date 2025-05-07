@@ -98,7 +98,7 @@ function curl_quickRequest(string $url, array $opts) {
     $v = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-    if (!$v) trigger_error(curl_error($ch));
+    if ($v === false) trigger_error(curl_error($ch));
 
     return ['ch' => $ch, 'res' => $v, 'httpCode' => $httpCode];
 }
@@ -122,7 +122,7 @@ function graphql_query(string $json, string $sid=''):array {
     $v = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-    if (!$v) {
+    if ($v === false) {
         if ($localMode) trigger_error(curl_error($ch));
     }
 
@@ -150,7 +150,7 @@ function curl_fetch(string $url, ?array $postFields = null) {
     $v = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-    if (!$v) {
+    if ($v === false) {
         if ($localMode) trigger_error(curl_error($ch));
     }
 
