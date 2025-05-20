@@ -209,6 +209,8 @@ class WSServer {
             require_once $libDir.'/Swoole/WorkerContext.php';
             require_once $libDir.'/Swoole/SwoolePromise.php';
             require_once $libDir.'/Swoole/SwoolePromiseAdapter.php';
+            require_once $libDir.'/Git/Git.php';
+            require_once $libDir.'/Git/Github.php';
             require_once $libDir.'/GraphQL/Executor.php';
             require_once $libDir.'/GraphQL/Rules/Limiter.php';
             require_once $libDir.'/GraphQL/Rules/QueryComplexity.php';
@@ -222,8 +224,6 @@ class WSServer {
             require_once $libDir.'/Database.php';
             require_once $libDir.'/FFMPEG.php';
             require_once $libDir.'/EventResolver.php';
-            require_once $libDir.'/Git.php';
-            require_once $libDir.'/Github.php';
             require_once $libDir.'/Magick.php';
             require_once $libDir.'/Network.php';
             require_once $libDir.'/OpenSSL.php';
