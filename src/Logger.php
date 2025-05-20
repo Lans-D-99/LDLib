@@ -17,6 +17,8 @@
  *****************************************************************************/
 namespace LDLib\Logger;
 
+use LDLib\Server\WorkerContext;
+
 enum LogLevel:Int {
     case FATAL = 5;
     case ERROR = 4;
@@ -27,13 +29,16 @@ enum LogLevel:Int {
 }
 
 class Logger {
+    public static string $name = '';
     public static string $logDir = __DIR__.'/../.serv/logs';
     public static LogLevel $minLevel = LogLevel::INFO;
 
     public static function log(LogLevel $level, string $sub, string $msg) {
         if ($level->value < self::$minLevel->value) return;
         $sNow = (new \DateTime('now'))->format('Y-m-d H:i:s.v');
-        file_put_contents(self::prepFile(),"$sNow | {$level->name} | $sub | $msg".PHP_EOL,FILE_APPEND);
+        $name = self::$name;
+        try { $sWorker = "Worker n°".WorkerContext::$server->getWorkerId().'('.WorkerContext::$server->getWorkerPid().')'; } catch (\Error $e) { $sWorker = 'No worker'; }
+        file_put_contents(self::prepFile(),"$sNow | $name | $sWorker | {$level->name} | $sub | $msg".PHP_EOL,FILE_APPEND);
     }
 
     public static function logThrowable(\Throwable $t) {

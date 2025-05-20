@@ -43,6 +43,7 @@ class HTTPServer {
         if (!DataFetcher::$isHTTPDataFetcher) throw new \ErrorException('DataFetcher not configured.');
 
         self::$rootPath = $rootPath;
+        Logger::$name = 'HTTPServer('.getmypid().')';
         Logger::$logDir = self::$rootPath.'/.serv/logs';
         if (!is_dir(self::$rootPath.'/.serv/logs/http/swoole-logs')) mkdir(self::$rootPath.'/.serv/logs/http/swoole-logs/',777,true);
         file_put_contents(self::$rootPath.'/.serv/logs/http/swoole-logs/swoole-log.txt','',FILE_APPEND);

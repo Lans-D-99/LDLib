@@ -40,6 +40,7 @@ class WSServer {
         if (!DataFetcher::$isWSDataFetcher) throw new \ErrorException('DataFetcher not configured.');
         
         self::$rootPath = $rootPath;
+        Logger::$name = 'WSServer('.getmypid().')';
         Logger::$logDir = self::$rootPath.'/.serv/logs';
         if (!is_dir(self::$rootPath.'/.serv/logs/ws/swoole-logs')) mkdir(self::$rootPath.'/.serv/logs/ws/swoole-logs/',777,true);
         file_put_contents(self::$rootPath.'/.serv/logs/ws/swoole-logs/swoole-log.txt','',FILE_APPEND);
