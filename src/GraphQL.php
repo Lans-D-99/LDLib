@@ -167,22 +167,27 @@ class GraphQL {
                 if ($context->subRequest?->name === '--unsubscribing--') {
                     @$context->server->push($context->frame->fd,json_encode($output,JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
                 } else if (isset($output['errors'])) {
-                    $a = ['subscription_init' => 'failed', 'errors' => $output['errors']];
+                    $a = ['subscription_init' => 'failed', 'subscription_name' => $context->subRequest->name, 'errors' => $output['errors']];
                     @$context->server->push($context->frame->fd,json_encode($a,JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
                 } else if ($context?->subRequest == null) {
                     @$context->server->push($context->frame->fd,json_encode($output, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
                 } else {
                     $success = false;
-                    try { $success = DataFetcher::storeSubscription($context, json_encode(['data' => $output['data']], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)); }
-                    catch (\Throwable $t) { Logger::logThrowable($t); }
+                    try {
+                        $success = DataFetcher::storeSubscription($context, json_encode([
+                            'alias' => $context->subRequest->alias,
+                            'data' => $output['data'],
+                            'metadata' => $context->subRequest->metadata
+                        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+                    } catch (\Throwable $t) { Logger::logThrowable($t); }
                     finally {
                         if (!$success) {
                             Logger::log(LogLevel::ERROR, 'GraphQL', 'storeSubscription failed');
-                            @$context->server->push($context->frame->fd,json_encode(['subscription_init' => 'failed', 'error' => 'Internal error.']));
+                            @$context->server->push($context->frame->fd,json_encode(['subscription_init' => 'failed', 'subscription_name' => $context->subRequest->name, 'error' => 'Internal error.']));
                             return;
                         }
                     }
-                    @$context->server->push($context->frame->fd,json_encode(['subscription_init' => 'succeeded']));
+                    @$context->server->push($context->frame->fd,json_encode(['subscription_init' => 'succeeded', 'subscription_name' => $context->subRequest->name]));
                 }
             }
         });
