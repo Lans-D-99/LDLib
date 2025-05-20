@@ -240,7 +240,7 @@ class HTTPServer {
             require_once $libDir.'/User.php';
             require_once $libDir.'/GraphQL.php';
             if (isset($_SERVER['LD_LOCAL_GIT_PATH'])) \LDLib\Git\Git::init($_SERVER['LD_LOCAL_GIT_PATH']);
-            WorkerContext::init();
+            WorkerContext::init(self::$server);
             if (isset($onWorkerStart)) $onWorkerStart();
             if ($workerId == 0) DataFetcher::init2();
             GraphQL::buildSchema();

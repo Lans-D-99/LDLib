@@ -231,7 +231,7 @@ class WSServer {
             require_once $libDir.'/Security.php';
             require_once $libDir.'/User.php';
             require_once $libDir.'/GraphQL.php';
-            WorkerContext::init();
+            WorkerContext::init($wsServer);
             if (isset($onWorkerStart)) $onWorkerStart();
             if ($workerId == 0 && $wsInitVal == 'full') DataFetcher::init2();
             GraphQL::buildSchema();

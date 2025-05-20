@@ -23,17 +23,20 @@ use LDLib\Context\Context;
 use LDLib\Database\LDPDO;
 use LDLib\Logger\Logger;
 use LDLib\Logger\LogLevel;
+use Swoole\Server;
 
 class WorkerContext {
+    public static Server $server;
     public static ConnectionPool $pdoConnectionPool;
     public static ConnectionPool $valkeyConnectionPool;
     public static array $pdoPoolCapacities = [10,30,50];
     public static array $valkeyPoolCapacities = [10,30,50];
     public static bool $initialized = false;
 
-    public static function init() {
+    public static function init(Server $server) {
         //! should move stuff in HTTPServer here
         if (WorkerContext::$initialized) return;
+        self::$server = $server;
         self::$pdoPoolCapacities = explode(',',$_SERVER['LD_DB_POOL_SIZE']??'10,30,50');
         self::$valkeyPoolCapacities = explode(',',$_SERVER['LD_VALKEY_POOL_SIZE']??'10,30,50');
         self::$pdoConnectionPool = new ConnectionPool(fn() => new LDPDO(),self::$pdoPoolCapacities,fn(LDPDO $pdo, ?Context $context=null) => $pdo->context = $context, 'PDOPool');
