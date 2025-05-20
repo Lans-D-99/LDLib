@@ -36,8 +36,8 @@ class WorkerContext {
         if (WorkerContext::$initialized) return;
         self::$pdoPoolCapacities = explode(',',$_SERVER['LD_DB_POOL_SIZE']??'10,30,50');
         self::$valkeyPoolCapacities = explode(',',$_SERVER['LD_VALKEY_POOL_SIZE']??'10,30,50');
-        self::$pdoConnectionPool = new ConnectionPool(fn() => new LDPDO(),self::$pdoPoolCapacities,fn(LDPDO $pdo, ?Context $context=null) => $pdo->context = $context);
-        self::$valkeyConnectionPool = new ConnectionPool(fn() => new LDValkey(),self::$valkeyPoolCapacities,fn(LDValkey $valkey, ?Context $context=null) => $valkey->context = $context);
+        self::$pdoConnectionPool = new ConnectionPool(fn() => new LDPDO(),self::$pdoPoolCapacities,fn(LDPDO $pdo, ?Context $context=null) => $pdo->context = $context, 'PDOPool');
+        self::$valkeyConnectionPool = new ConnectionPool(fn() => new LDValkey(),self::$valkeyPoolCapacities,fn(LDValkey $valkey, ?Context $context=null) => $valkey->context = $context, 'ValkeyPool');
         self::$initialized = true;
     }
 

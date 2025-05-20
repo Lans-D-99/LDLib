@@ -29,7 +29,7 @@ class ConnectionPool {
     private int $capacityLevel = -1;
     private int $busyGoingToLevel = -1;
 
-    public function __construct(public \Closure $constructor, protected array $capacities, public ?\Closure $afterFetch=null) {
+    public function __construct(public \Closure $constructor, protected array $capacities, public ?\Closure $afterFetch=null, public string $name='') {
         if (count($capacities) <= 0) throw new \Exception('count($capacities) <= 0.');
         foreach ($capacities as $cap) if (!is_int((int)$cap)) throw new \Exception('Invalid capacities given.');
         $capacities = array_map(fn($v) => (int)$v, $capacities);
@@ -48,7 +48,7 @@ class ConnectionPool {
     public function get(?Context $context=null, float $timeout=1) {
         $conn = $this->pool->pop($timeout);
         if ($conn === false) {
-            // Logger::log(LogLevel::WARN, 'ConnectionPool', 'Pool is empty but need connection.');
+            Logger::log(LogLevel::WARN, 'ConnectionPool', "{$this->name}: Pool is empty but need connection.");
             go(fn() => $this->fillForLevel($this->capacityLevel+1));
             $conn = $this->pool->pop(5);
             if ($conn === false) {
@@ -62,7 +62,7 @@ class ConnectionPool {
 
     public function put(mixed $connection, float $timeout=3) {
         if ($this->nConnectionsTracked <= 0) {
-            Logger::log(LogLevel::ERROR,'ConnectionPool',"Failed giving back a connection to pool, nConnectionsTracked={$this->nConnectionsTracked}, poolLength={$this->pool->length()}.");
+            Logger::log(LogLevel::ERROR,'ConnectionPool',"{$this->name}: Failed giving back a connection to pool, nConnectionsTracked={$this->nConnectionsTracked}, poolLength={$this->pool->length()}.");
             return false;
         }
         $this->nConnectionsTracked--;
@@ -87,13 +87,13 @@ class ConnectionPool {
         $this->busyGoingToLevel = $level;
 
         $capacity = $this->capacities[$level];
-        Logger::log(LogLevel::INFO,'ConnectionPool',"Filling to level $level (toCapacity=$capacity, currentLength={$this->pool->length()}).");
+        Logger::log(LogLevel::INFO,'ConnectionPool',"{$this->name}: Filling to level $level (toCapacity=$capacity, currentLength={$this->pool->length()}).");
 
         $nFailures = 0;
         while ($this->pool->length() < $capacity) {
             if (!$this->addNewConnection($timeout)) {
                 if (++$nFailures == 10) {
-                    Logger::log(LogLevel::ERROR, 'ConnectionPool', "Failed filling to level $level (toCapacity=$capacity, currentLength={$this->pool->length()}).");
+                    Logger::log(LogLevel::ERROR, 'ConnectionPool', "{$this->name}: Failed filling to level $level (toCapacity=$capacity, currentLength={$this->pool->length()}).");
                     $this->busyGoingToLevel = -1;
                     return;
                 }
@@ -109,7 +109,7 @@ class ConnectionPool {
             $conn = ($this->constructor)();
             $res = $this->pool->push($conn,$timeout);
             if (!$res) {
-                Logger::log(LogLevel::ERROR,'ConnectionPool',"Failed adding a connection to pool. (errcode:{$this->pool->errCode} (errCode might be wrong))");
+                Logger::log(LogLevel::ERROR,'ConnectionPool',"{$this->name}: Failed adding a connection to pool. (errcode:{$this->pool->errCode} (errCode might be wrong))");
                 return false;
             }
             return true;
