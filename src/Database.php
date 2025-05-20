@@ -136,16 +136,20 @@ class DatabaseUtils {
             if ($executeVals_filteredForWhere != null) {
                 $stmt = $conn->prepare("SELECT COUNT(*) FROM $dbLoc WHERE $whereCond");
                 $stmt->execute($executeVals_filteredForWhere);
-                $count = $stmt->fetch(\PDO::FETCH_NUM)[0];
-            } else $count = $conn->query("SELECT COUNT(*) FROM $dbLoc WHERE $whereCond")->fetch(\PDO::FETCH_NUM)[0];
+                $itemsCount = $stmt->fetch(\PDO::FETCH_NUM)[0];
+            } else $itemsCount = $conn->query("SELECT COUNT(*) FROM $dbLoc WHERE $whereCond")->fetch(\PDO::FETCH_NUM)[0];
 
-            $n = $first != null ? $first : $last;
-            $i = $count % $n;
-            if ($i == 0) $i = $n;
+            $n = $itemsPerPage = $first != null ? $first : $last;
+            $mod = $itemsCount % $n;
+            if ($mod != 0) $n = $mod;
+
+            $i = $n + 1;
             if ($executeVals != null) {
                 $stmt = $conn->prepare("SELECT $select FROM $dbLoc WHERE $whereCond ORDER BY ".($isComplex ? ($variable->orderBy_before)(null,4) : $variable." DESC")." LIMIT $i");
                 $stmt->execute($executeVals);
             } else $stmt = $conn->query("SELECT $select FROM $dbLoc WHERE $whereCond ORDER BY ".($isComplex ? ($variable->orderBy_before)(null,4) : $variable." DESC")." LIMIT $i");
+
+            if ($pag->requestPageCount) $pageCount = $itemsCount / $itemsPerPage;
 
             $before=null;
             $whereCondAfterCurs = "AND ($whereCond)";
@@ -184,11 +188,14 @@ class DatabaseUtils {
 
         // Store results
         $result = [];
+        $nResults = 0;
         $aRows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         $hadMoreResults = false;
         for ($i=0; $i<count($aRows); $i++) {
             if ($i < $n*$pag->skipPages) continue;
-            if (count($result) == $n) { $hadMoreResults = true; break; }
+
+            if ($nResults == $n) { $hadMoreResults = true; break; }
+
             $row = $aRows[$i];
 
             $cursor = $makeCursor($row);
@@ -199,8 +206,8 @@ class DatabaseUtils {
             if (count($result) === 0) $startCursor = $cursor;
             $endCursor = $cursor;
             $result[] = ['edge' => $refRow, 'cursor' => $cursor];
+            $nResults++;
         }
-        $nResults = count($result);
         if ($last != null && $nResults > 0) {
             $result = array_reverse($result);
             $startCursor = $result[0]['cursor'];
@@ -208,9 +215,9 @@ class DatabaseUtils {
         }
 
         /* Set some vals according to the result
-        (if it used getLastPage or skipPages, cuz they alter the normal behavior of the function,
+        (if it used skipPages, cuz it alters the normal behavior of the function,
         I'm making it look like a normal operation so that the following operations don't have to adapt) */
-        if (($getLastPage || $pag->skipPages > 0) && $nResults>0) {
+        if ($pag->skipPages > 0 && $nResults>0) {
             $after = $makeCursor($result[0]['edge']['data']);
             if (!$getLastPage) $before = $makeCursor($result[count($result)-1]['edge']['data']);
         }
@@ -251,19 +258,22 @@ class DatabaseUtils {
 
         if ($pag->requestPageCount == true) {
             // Set pageCount & itemsCount
-            if ($executeVals_filteredForWhere != null) {
-                $stmt = $conn->prepare("SELECT COUNT(*) FROM $dbLoc WHERE $whereCond");
-                $stmt->execute($executeVals_filteredForWhere);
-                $itemsCount = $stmt->fetch(\PDO::FETCH_NUM)[0];
-            } else {
-                $itemsCount = $conn->query("SELECT COUNT(*) FROM $dbLoc WHERE $whereCond")->fetch(\PDO::FETCH_NUM)[0];
+            if (!$getLastPage) {
+                if ($executeVals_filteredForWhere != null) {
+                    $stmt = $conn->prepare("SELECT COUNT(*) FROM $dbLoc WHERE $whereCond");
+                    $stmt->execute($executeVals_filteredForWhere);
+                    $itemsCount = $stmt->fetch(\PDO::FETCH_NUM)[0];
+                } else {
+                    $itemsCount = $conn->query("SELECT COUNT(*) FROM $dbLoc WHERE $whereCond")->fetch(\PDO::FETCH_NUM)[0];
+                }
+                $pageCount = $itemsCount / $n;
             }
-            $v = $itemsCount / $n;
-            $pageCount = (int)((fmod($v,1) > 0) ? $v+1 : $v);
+            $pageCount = (int)((fmod($pageCount,1) > 0) ? $pageCount+1 : $pageCount);
             if ($pageCount < 1) $pageCount = 1;
 
             // Set currPage
-            if ($nResults == 0) $currPage = 1;
+            if ($getLastPage) $currPage = $pageCount;
+            else if ($nResults == 0) $currPage = 1;
             else if ($after == null && $before == null) $currPage = $first != null ? 1 : $pageCount;
             else {
                 try {
@@ -282,9 +292,6 @@ class DatabaseUtils {
                     $currPage = ceil($nItemsBefore / $n);
                 } catch (\Exception $e) { Logger::logThrowable($e); }
             }
-
-            //! temp lastPage bug correction
-            if ($currPage == $pageCount) $hasNextPage = false;
         }
 
         $storeAll([
