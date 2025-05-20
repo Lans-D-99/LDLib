@@ -23,12 +23,14 @@ use LDLib\Logger\LogLevel;
 use LDLib\Server\WorkerContext;
 
 class LDValkey {
+    public string $instanceId;
     public ?\Redis $valkey = null;
 
     public int $getCount = 0;
     public int $setCount = 0;
 
     public function __construct(public ?Context $context=null) {
+        $this->instanceId = bin2hex(random_bytes(8));
         $this->init();
     }
 

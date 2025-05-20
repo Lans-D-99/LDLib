@@ -29,11 +29,13 @@ enum MariaDBError:int {
 }
 
 class LDPDO {
+    public string $instanceId;
     public ?\PDO $pdo;
     public array $locks = [];
     public bool $skipTransactionCommands = false;
 
     public function __construct(public ?Context $context=null) {
+        $this->instanceId = bin2hex(random_bytes(8));
         $this->pdo = PDO::getConnection();
     }
 
