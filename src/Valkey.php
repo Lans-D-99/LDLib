@@ -102,6 +102,7 @@ class LDValkey {
     }
 
     public function toPool() {
+        if ($this->context != null) $this->context->valkeyConnsTraces->remove($this->instanceId,'');
         WorkerContext::$valkeyConnectionPool->put($this);
     }
 

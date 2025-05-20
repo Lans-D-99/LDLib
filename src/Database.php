@@ -66,6 +66,7 @@ class LDPDO {
     public function toPool(bool $rollback=false) {
         if ($rollback) $this->query('ROLLBACK');
         $this->skipTransactionCommands = false;
+        if ($this->context != null) $this->context->pdoConnsTraces->remove($this->instanceId,'');
         WorkerContext::$pdoConnectionPool->put($this);
     }
 

@@ -17,18 +17,56 @@
  *****************************************************************************/
 namespace LDLib\Context;
 
+use Ds\Map;
+use GraphQL\Type\Definition\ResolveInfo;
 use LDLib\Cache\LDValkey;
 use LDLib\User\User;
 use Swoole\Http\Server;
 use Swoole\WebSocket\Server as WSServer;
 use LDLib\Database\LDPDO;
+use LDLib\Logger\Logger;
+use LDLib\Logger\LogLevel;
 use LDLib\Server\WorkerContext;
 use LDLib\User\IIdentifiableUser;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\WebSocket\Frame;
 
-abstract class Context {
+
+interface IPDOImplContext {
+    public function getLDPDO():LDPDO|false;
+}
+
+interface IValkeyImplContext {
+    public function getLDValkey():LDValkey|false;
+}
+
+interface IUserImplContext {
+    public function getAuthenticatedUser():?IIdentifiableUser;
+}
+
+interface IGraphQLImplContext extends IPDOImplContext,IValkeyImplContext,IUserImplContext {
+    public function getGraphQLPathTimes():array;
+    public function logQueryPathTime(array $a, ?float $time=null);
+    public function checkConnectionsLeak();
+}
+
+interface IHTTPContext {
+    public function __construct(Server $server, Request $request, ?Response $response = null);
+    public function deleteUploadedFiles();
+    public function addServerTimingData(string $s);
+    public function getRealRemoteAddress();
+}
+
+interface IWSContext extends IValkeyImplContext {
+    public function __construct(WSServer $server, Frame $frame);
+    public function getConnInfo();
+    public function getSubscriptionRequest():?SubscriptionRequest;
+}
+
+interface IOAuthContext { }
+
+abstract class Context implements IPDOImplContext, IValkeyImplContext, IUserImplContext, IGraphQLImplContext {
     public ?IIdentifiableUser $authenticatedUser = null;
     public ?User $asUser = null;
     public array $logs = [];
@@ -39,18 +77,45 @@ abstract class Context {
 
     public array $gqlPathTimes = [];
 
-    public function __construct(public Server|WSServer $server) { }
+    public Map $pdoConnsTraces;
+    public Map $valkeyConnsTraces;
+
+    public function __construct(public Server|WSServer $server) {
+        $this->pdoConnsTraces = new Map();
+        $this->valkeyConnsTraces = new Map();
+    }
 
     public function addLog(string $name, string $msg) {
         $this->logs[] = "$name: $msg";
     }
 
-    public function getLDPDO():LDPDO|false {
-        return WorkerContext::$pdoConnectionPool->get($this);
+    public function getLDPDO($dontTrack=false):LDPDO|false {
+        $conn = WorkerContext::$pdoConnectionPool->get($this);
+        if ($_SERVER['LD_TRACK_CONNECTIONS'] === '1' && $conn !== false && !$dontTrack) {
+            $a = $this->pdoConnsTraces->get($conn->instanceId,'');
+            if ($a !== '') throw new \Exception('pdoConnsTraces PDO ??????');
+            $a = [ 'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,4) ];
+            $this->pdoConnsTraces->put($conn->instanceId,$a);
+        }
+        return $conn;
     }
 
-    public function getLDValkey():LDValkey|false {
-        return WorkerContext::$valkeyConnectionPool->get($this);
+    public function getLDValkey($dontTrack=false):LDValkey|false {
+        $conn = WorkerContext::$valkeyConnectionPool->get($this);
+        if ($_SERVER['LD_TRACK_CONNECTIONS'] === '1' && $conn !== false && !$dontTrack) {
+            $a = $this->valkeyConnsTraces->get($conn->instanceId,'');
+            if ($a !== '') throw new \Exception('valkeyConnsTraces PDO ??????');
+            $a = [ 'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,4) ];
+            $this->valkeyConnsTraces->put($conn->instanceId,$a);
+        }
+        return $conn;
+    }
+
+    public function checkConnectionsLeak() {
+        $nPDOLeaks = $this->pdoConnsTraces->count();
+        $nValkeyLeaks = $this->valkeyConnsTraces->count();
+        if ($nPDOLeaks > 0) { error_log('LEAK - '.print_r($this->pdoConnsTraces,true)); Logger::log(LogLevel::ERROR,'Context - Connections','PDO LEAKS: '.$nPDOLeaks); }
+        if ($nValkeyLeaks > 0) { error_log('LEAK - '.print_r($this->valkeyConnsTraces,true)); Logger::log(LogLevel::ERROR,'Context - Connections','Valkey LEAKS: '.$nValkeyLeaks); }
     }
 
     public function logQueryPathTime(array $path, ?float $time=null) {        
@@ -71,33 +136,13 @@ abstract class Context {
     }
 }
 
-interface IContext {
-    public function getLDPDO():LDPDO|false;
-    public function getLDValkey():LDValkey|false;
-    public function getAuthenticatedUser():?IIdentifiableUser;
-    public function getGraphQLPathTimes():array;
-    public function logQueryPathTime(array $a, ?float $time=null);
-}
-
-interface IHTTPContext extends IContext {
-    public function __construct(Server $server, Request $request, ?Response $response = null);
-    public function deleteUploadedFiles();
-    public function addServerTimingData(string $s);
-    public function getRealRemoteAddress();
-}
-
-interface IWSContext extends IContext {
-    public function __construct(WSServer $server, Frame $frame);
-    public function getConnInfo();
-    public function getSubscriptionRequest():?SubscriptionRequest;
-    public function getLDValkey():LDValkey|false;
-}
-
-interface IOAuthContext extends IContext {
-
-}
-
 class SubscriptionRequest {
-    public function __construct(public string $name, public mixed $data=null) { }
+    public array $metadata = [];
+
+    public function __construct(public string $name, public mixed $data=null, public ?string $alias=null) { }
+
+    public static function fromResolveInfo(ResolveInfo $ri, mixed $data=null) {
+        return new self($ri->fieldName,$data,$ri->path[count($ri->path)-1]);
+    }
 }
 ?>

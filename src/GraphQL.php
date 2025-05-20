@@ -26,6 +26,7 @@ use GraphQL\Language\SourceLocation;
 use LDLib\Swoole\SwoolePromise;
 use GraphQL\Type\Schema;
 use GraphQL\Validator\Rules\DisableIntrospection;
+use LDLib\Context\IGraphQLImplContext;
 use LDLib\DataFetcher\DataFetcher;
 use LDLib\TypedException;
 use LDLib\Context\IHTTPContext;
@@ -59,7 +60,7 @@ class GraphQL {
         self::$rules = $rules;
     }
 
-    public static function processQuery(IHTTPContext|IWSContext|IOAuthContext $context, bool $useMD5ForQueryHash=false):void {
+    public static function processQuery(IGraphQLImplContext $context, bool $useMD5ForQueryHash=false):void {
         $tGraphQL = microtime(true);
         $isDebug = (bool)$_SERVER['LD_DEBUG'];
         $isHTTP = $context instanceof IHTTPContext;
@@ -141,7 +142,7 @@ class GraphQL {
 
             if ($context instanceof IHTTPContext) {
                 go(function() use($context,$user,$complexity) {
-                    $pdo = $context->getLDPDO();
+                    $pdo = $context->getLDPDO(true);
                     if ($user !== null) {
                         $pdo->pdo->query("INSERT INTO sec_users_query_complexity_usage (user_id,complexity_used) VALUES ($user->id,$complexity) ON DUPLICATE KEY UPDATE complexity_used=complexity_used+VALUES(complexity_used)");
                     } else {
@@ -159,6 +160,7 @@ class GraphQL {
                     $output['pathTimings'] = $context->gqlPathTimes;
                 }
 
+                $context->checkConnectionsLeak();
                 $context->response->header('content-type', 'application/json');
                 $context->response->end(ServerContext::applyContentEncoding($context->request,$context->response,json_encode($output, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)));
             } else if ($context instanceof IWSContext) {
