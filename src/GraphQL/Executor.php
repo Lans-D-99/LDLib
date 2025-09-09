@@ -26,7 +26,10 @@ use GraphQL\Executor\Promise\PromiseAdapter;
 use GraphQL\Executor\ReferenceExecutor;
 use GraphQL\Executor\ScopedContext;
 use GraphQL\Language\AST\DocumentNode;
+use GraphQL\Language\AST\FieldNode;
 use GraphQL\Type\Definition\ObjectType;
+use GraphQL\Type\Definition\ResolveInfo;
+use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Schema;
 
 class Executor extends ReferenceExecutor {
@@ -105,6 +108,120 @@ class Executor extends ReferenceExecutor {
             throw $t;
         }
         return $v;
+    }
+
+    #[\Override]
+    protected function resolveField(
+        ObjectType $parentType,
+        $rootValue,
+        \ArrayObject $fieldNodes,
+        string $responseName,
+        array $path,
+        array $unaliasedPath,
+        $contextValue
+    ) {
+        $exeContext = $this->exeContext;
+
+        $fieldNode = $fieldNodes[0];
+        \assert($fieldNode instanceof FieldNode, '$fieldNodes is non-empty');
+
+        $fieldName = $fieldNode->name->value;
+        $fieldDef = $this->getFieldDef($exeContext->schema, $parentType, $fieldName);
+        if ($fieldDef === null || ! $fieldDef->isVisible()) {
+            return static::$UNDEFINED;
+        }
+
+        $path[] = $responseName;
+        $unaliasedPath[] = $fieldName;
+
+        $returnType = $fieldDef->getType();
+        // The resolve function's optional 3rd argument is a context value that
+        // is provided to every resolve function within an execution. It is commonly
+        // used to represent an authenticated user, or request-specific caches.
+        // The resolve function's optional 4th argument is a collection of
+        // information about the current execution state.
+        $info = new ResolveInfo(
+            $fieldDef,
+            $fieldNodes,
+            $parentType,
+            $path,
+            $exeContext->schema,
+            $exeContext->fragments,
+            $exeContext->rootValue,
+            $exeContext->operation,
+            $exeContext->variableValues,
+            $unaliasedPath
+        );
+
+        $resolveFn = $fieldDef->resolveFn
+            ?? $parentType->resolveFieldFn
+            ?? $this->exeContext->fieldResolver;
+
+        $argsMapper = $fieldDef->argsMapper
+            ?? $parentType->argsMapper
+            ?? $this->exeContext->argsMapper;
+
+        $contextValue->start($path);
+        // Get the resolve function, regardless of if its result is normal
+        // or abrupt (error).
+        $result = $this->resolveFieldValueOrError(
+            $fieldDef,
+            $fieldNode,
+            $resolveFn,
+            $argsMapper,
+            $rootValue,
+            $info,
+            $contextValue
+        );
+
+        return $this->completeValueCatchingError(
+            $returnType,
+            $fieldNodes,
+            $info,
+            $path,
+            $unaliasedPath,
+            $result,
+            $contextValue
+        );
+    }
+
+    #[\Override]
+    protected function completeValueCatchingError(
+        Type $returnType,
+        \ArrayObject $fieldNodes,
+        ResolveInfo $info,
+        array $path,
+        array $unaliasedPath,
+        $result,
+        $contextValue
+    ) {
+        // Otherwise, error protection is applied, logging the error and resolving
+        // a null value for this field if one is encountered.
+        try {
+            $promise = $this->getPromise($result);
+            if ($promise !== null) {
+                $contextValue->end($info->path,'promA');
+                $completed = $promise->then(fn (&$resolved) => $this->completeValue($returnType, $fieldNodes, $info, $path, $unaliasedPath, $resolved, $contextValue));
+            } else {
+                $contextValue->end($info->path,'A');
+                $completed = $this->completeValue($returnType, $fieldNodes, $info, $path, $unaliasedPath, $result, $contextValue);
+            }
+
+            $promise = $this->getPromise($completed);
+            if ($promise !== null) {
+                $contextValue->end($info->path,'promB');
+                return $promise->then(null, function ($error) use ($fieldNodes, $path, $unaliasedPath, $returnType): void {
+                    $this->handleFieldError($error, $fieldNodes, $path, $unaliasedPath, $returnType);
+                });
+            }
+
+            $contextValue->end($info->path,'B');
+            return $completed;
+        } catch (\Throwable $err) {
+            $this->handleFieldError($err, $fieldNodes, $path, $unaliasedPath, $returnType);
+
+            return null;
+        }
     }
 }
 ?>
