@@ -492,14 +492,12 @@ class Discord {
         return $res;
     }
 
-    public function api_editOriginalInteractionResponse(string $interactionToken, string $msg) {
+    public function api_editOriginalInteractionResponse(string $interactionToken, array $data) {
         $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/@original",[
             CURLOPT_CUSTOMREQUEST => "PATCH",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
-            CURLOPT_POSTFIELDS => json_encode([
-                'content' => $msg
-            ], JSON_THROW_ON_ERROR)
+            CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
         ]);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "editOriginalInteractionResponse error {$res['httpCode']}: {$res['res']}");
         return $res;
