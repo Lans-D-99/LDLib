@@ -201,6 +201,16 @@ class Discord {
         }
     }
 
+    public function updateCommands(array $commands) {
+        $res = $this->api_getCurrentUserGuilds();
+        if ($res['httpCode'] !== 200) return;
+        $guilds = json_decode($res['res'],true);
+        foreach ($guilds as $guild) {
+            $res = $this->api_overwriteGuildApplicationCommands($guild['id'],$commands);
+            if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "Couldn't overwrite commands: {$res['res']}");
+        }
+    }
+
     public function connect() { // returning TRUE means reconnect instead of ending the script
         $host = preg_replace('/^wss:\/\//','',$this->connectURL,1);
         $this->wsClient = new WSClient(new \Swoole\Coroutine\Http\Client($host,443,true));
@@ -392,6 +402,15 @@ class Discord {
         ]));
     }
 
+    public function api_getCurrentUserGuilds() {
+        $res = curl_quickRequest("{$this->apiUrl}/users/@me/guilds",[
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
+        ]);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_getCurrentUserGuilds : unexpected http code {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
     public function api_getGuildMember(string $serverId, string $userId) {
         $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId",[
             CURLOPT_RETURNTRANSFER => true,
@@ -500,6 +519,48 @@ class Discord {
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
         ]);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "editOriginalInteractionResponse error {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
+    public function api_createFollowupMessage(string $interactionToken, array $data, $wait=false, $withComponents=false) {
+        $bWait = $wait ? 'true' : 'false';
+        $bComponents = $withComponents ? 'true' : 'false';
+        $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken?wait=$bWait&with_components=$bComponents",[
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
+            CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
+        ]);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "createFollowupMessage error {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
+    public function api_getFollowupMessage(string $interactionToken, string $messageId) {
+        $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/$messageId",[
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
+        ]);
+        if ($res['httpCode'] !== 200 && $res['httpCode'] !== 429) Logger::log(LogLevel::ERROR, 'DISCORD', "getFollowupMessage '$messageId' error {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
+    public function api_editFollowupMessage(string $interactionToken, string $messageId, array $data) {
+        $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/$messageId",[
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', "Authorization: Bot {$this->botToken}"],
+            CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
+        ]);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "editFollowupMessage '$messageId' error {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
+    public function api_deleteFollowupMessage(string $interactionToken, string $messageId) {
+        $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/$messageId",[
+            CURLOPT_CUSTOMREQUEST => 'DELETE',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"],
+        ]);
+        if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "deleteFollowupMessage '$messageId' error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 }
