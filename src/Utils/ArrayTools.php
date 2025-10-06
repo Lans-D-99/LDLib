@@ -104,4 +104,15 @@ function array_if(array $a, callable $f) {
 	foreach ($a as $v) if ($f($v)) return true;
 	return false;
 }
+
+function array_to_string(array $a, $startingString='', $delimiter=',', ?\Closure $fValue=null) {
+	$s = $startingString;
+	$first = true;
+	foreach ($a as $v) {
+		if ($first) { $first = false; }
+		else { $s .= $delimiter; }
+		$s .= $fValue == null ? $v : $fValue($v);
+	}
+	return $s;
+}
 ?>
