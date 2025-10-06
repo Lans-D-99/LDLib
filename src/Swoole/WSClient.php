@@ -62,28 +62,40 @@ class WSClient {
         if ($this->client->connected) { Logger::log(LogLevel::INFO, 'WSClient', "WSClient already connected to path $path."); return; }
         if ($this->connectWG->count() > 0) return;
 
-        $wg = new WaitGroup(1);
-        $res = null;
-        go(function() use($wg,$path,&$res) {
-            $this->connectWG->add();
-            $res = $this->client->upgrade($path);
-            if (!$res) {
-                if ($this->reconnectTimerID <= 0) {
-                    if (time() - $this->lastConnectionFailLogged > 60) {
-                        $this->lastConnectionFailLogged = time();
-                        Logger::log(LogLevel::ERROR, 'WSClient', "!!! Couldn't connect to path. Retries every {$this->nConnectionRetry}s. (path:$path)");
+        if ($async) {
+            $wg = new WaitGroup(1);
+            $res = null;
+            go(function() use($wg,$path,&$res) {
+                $this->connectWG->add();
+                $res = $this->client->upgrade($path);
+                if (!$res) {
+                    if ($this->reconnectTimerID <= 0) {
+                        if (time() - $this->lastConnectionFailLogged > 60) {
+                            $this->lastConnectionFailLogged = time();
+                            Logger::log(LogLevel::ERROR, 'WSClient', "!!! Couldn't connect to path. Retries every {$this->nConnectionRetry}s. (path:$path)");
+                        }
+                        $this->reconnectTimerID = (int)Timer::after($this->nConnectionRetry*1000,function() use($path) {
+                            $this->reconnectTimerID = -1;
+                            $this->connect($path);
+                        });
                     }
-                    $this->reconnectTimerID = (int)Timer::after($this->nConnectionRetry*1000,function() use($path) {
-                        $this->reconnectTimerID = -1;
-                        $this->connect($path);
-                    });
                 }
-            }
 
+                $this->connectWG->done();
+                $wg->done();
+            });
+        } else {
+            $this->connectWG->add();
+            while (!$this->client->upgrade($path)) {
+                if (time() - $this->lastConnectionFailLogged > 60) {
+                    $this->lastConnectionFailLogged = time();
+                    Logger::log(LogLevel::ERROR, 'WSClient', "!!! Couldn't connect to path. Retrying. (path:$path)");
+                }
+                sleep(1);
+            }
             $this->connectWG->done();
-            $wg->done();
-        });
-        if (!$async) { $wg->wait(); return $res; }
+            return true;
+        }
     }
 }
 ?>
