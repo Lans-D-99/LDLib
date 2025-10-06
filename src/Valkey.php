@@ -116,6 +116,7 @@ class LDValkey {
                 $this->valkey = null;
                 Logger::log(LogLevel::FATAL, 'Valkey','Valkey connection failure.');
             }
+            if (isset($_SERVER['LD_VALKEY_DATABASE_ID'])) $this->valkey->select(intval($_SERVER['LD_VALKEY_DATABASE_ID']));
         } catch (\RedisException $e) {
             $this->valkey = null;
             Logger::log(LogLevel::FATAL, 'Valkey','Valkey connection failure: '.$e->getMessage());
