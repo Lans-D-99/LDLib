@@ -239,7 +239,7 @@ class Discord {
             $v = curl_quickRequest("$apiUrl/gateway/bot",[
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-            ])['res']??null;
+            ],10)['res']??null;
             if ($v == null) throw new \Exception("Couldn't connect to gateway.");
             $json = json_decode($v,true);
 
