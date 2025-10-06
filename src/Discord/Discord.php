@@ -122,6 +122,57 @@ enum InteractionCallbackType:Int {
     case LAUNCH_ACTIVITY = 12;
 }
 
+enum ComponentType:Int {
+    case ACTION_ROW = 1;
+    case BUTTON = 2;
+    case STRING_SELECT = 3;
+    case TEXT_INPUT = 4;
+    case USER_SELECT = 5;
+    case ROLE_SELECT = 6;
+    case MENTIONABLE_SELECT = 7;
+    case CHANNEL_SELECT = 8;
+    case SECTION = 9;
+    case TEXT_DISPLAY = 10;
+    case THUMBNAIL = 11;
+    case MEDIA_GALLERY = 12;
+    case FILE = 13;
+    case SEPARATOR = 14;
+    case CONTAINER = 17;
+    case LABEL = 18;
+}
+
+enum ActionRowChildComponent:Int {
+    case BUTTON = 2;
+    case STRING_SELECT = 3;
+    case USER_SELECT = 5;
+    case ROLE_SELECT = 6;
+    case MENTIONABLE_SELECT = 7;
+    case CHANNEL_SELECT = 8;
+}
+
+enum ContainerChildComponent:Int {
+    case ACTION_ROW = 1;
+    case SECTION = 9;
+    case TEXT_DISPLAY = 10;
+    case MEDIA_GALLERY = 12;
+    case SEPARATOR = 14;
+    case FILE = 13;
+}
+
+enum LabelChildComponent:Int {
+    case TEXT_INPUT = 4;
+    case STRING_SELECT = 3;
+    case USER_SELECT = 5;
+    case ROLE_SELECT = 6;
+    case MENTIONABLE_SELECT = 7;
+    case CHANNEL_SELECT = 8;
+}
+
+enum TextInputStyle:Int {
+    case SHORT = 1;
+    case PARAGRAPH = 2;
+}
+
 enum ApplicationCommandOptionType:Int {
     case SUB_COMMAND = 1;
     case SUB_COMMAND_GROUP = 2;
