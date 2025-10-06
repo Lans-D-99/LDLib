@@ -92,8 +92,9 @@ class LDWebPush {
     }
 }
 
-function curl_quickRequest(string $url, array $opts) {
+function curl_quickRequest(string $url, array $opts, ?int $timeout=null) {
     $ch = curl_init($url);
+    if ($timeout != null) curl_setopt($ch,CURLOPT_TIMEOUT,$timeout);
     curl_setopt_array($ch,$opts);
     $v = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
