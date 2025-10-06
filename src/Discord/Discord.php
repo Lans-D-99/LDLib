@@ -328,6 +328,7 @@ class Discord {
                     $nextHeartbeat = $msTime;
                     return 2;
                 case 7: // Reconnect
+                    $this->isIdentified = false;
                     $this->wsClient->client->close();
                     return 0;
                 case 9: // Invalid Session
@@ -336,6 +337,7 @@ class Discord {
                     else {
                         $this->valkey->del(['resumeGatewayURL','sessionID']);
                         $this->resumeGatewayURL = $this->sessionID = null;
+                        $this->isIdentified = false;
                         $this->wsClient->client->close();
                         return 0;
                     }
@@ -362,21 +364,24 @@ class Discord {
 
         while (true) {
             $msTime = round(microtime(true) * 1000);
-            if ($nextHeartbeat != null && $msTime >= $nextHeartbeat) {
-                $nextHeartbeat += $heartbeatInterval;
-                $d = $this->lastSequenceNumber??'null';
-                Logger::log(LogLevel::TRACE, 'DISCORD', "Send heartbeat: {\"op\":1, \"d\":$d}");
-                $this->wsClient->client->push("{\"op\":1, \"d\":$d}");
-            }
             if ($heartbeatReceptionMaxTime != null && $msTime >= $heartbeatReceptionMaxTime) {
                 Logger::log(LogLevel::WARN, 'DISCORD', "Hearbeat wasn't received in time.");
+                $this->isIdentified = false;
                 $this->wsClient->client->close();
                 return true;
             }
             if ($connectFinalizationMaxTime != null && $msTime >= $connectFinalizationMaxTime) {
                 Logger::log(LogLevel::WARN, 'DISCORD', "Identify or Resume didn't receive a successful response in time.");
+                $this->isIdentified = false;
                 $this->wsClient->client->close();
                 return true;
+            }
+            if ($nextHeartbeat != null && $msTime >= $nextHeartbeat) {
+                $nextHeartbeat += $heartbeatInterval;
+                $heartbeatReceptionMaxTime = $msTime + 10000;
+                $d = $this->lastSequenceNumber??'null';
+                Logger::log(LogLevel::TRACE, 'DISCORD', "Send heartbeat: {\"op\":1, \"d\":$d}");
+                $this->wsClient->client->push("{\"op\":1, \"d\":$d}");
             }
 
             $frame = $this->wsClient->client->recv();
