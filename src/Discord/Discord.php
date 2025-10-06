@@ -411,6 +411,30 @@ class Discord {
         return $res;
     }
 
+    public function api_createDM(string $recipientId) {
+        $res = curl_quickRequest("{$this->apiUrl}/users/@me/channels",[
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
+            CURLOPT_POSTFIELDS => json_encode([
+                'recipient_id' => $recipientId
+            ], JSON_THROW_ON_ERROR)
+        ],10);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_createDM : unexpected http code {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
+    public function api_createMessage(string $channelId, array $data) {
+        $res = curl_quickRequest("{$this->apiUrl}/channels/{$channelId}/messages",[
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
+            CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
+        ],10);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_createMessage : unexpected http code {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
     public function api_getGuildMember(string $serverId, string $userId) {
         $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId",[
             CURLOPT_RETURNTRANSFER => true,
