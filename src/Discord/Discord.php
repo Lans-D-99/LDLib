@@ -252,14 +252,23 @@ class Discord {
         }
     }
 
-    public function updateCommands(array $commands) {
+    public function updateCommands(array $commands):bool {
         $res = $this->api_getCurrentUserGuilds();
-        if ($res['httpCode'] !== 200) return;
+        if ($res['httpCode'] !== 200) {
+            Logger::log(LogLevel::ERROR, 'DISCORD', "Couldn't overwrite commands: {$res['res']}");
+            return false;
+        }
+        
         $guilds = json_decode($res['res'],true);
         foreach ($guilds as $guild) {
             $res = $this->api_overwriteGuildApplicationCommands($guild['id'],$commands);
-            if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "Couldn't overwrite commands: {$res['res']}");
+            if ($res['httpCode'] !== 200) {
+                Logger::log(LogLevel::ERROR, 'DISCORD', "Couldn't overwrite commands: {$res['res']}");
+                return false;
+            }
         }
+
+        return true;
     }
 
     public function connect() { // returning TRUE means reconnect instead of ending the script
