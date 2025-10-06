@@ -563,5 +563,9 @@ class Discord {
         if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "deleteFollowupMessage '$messageId' error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
+
+    public static function msgEscapeCharacters(string $s) {
+        return str_replace(['*','/','#','\\'],['\*','\/','\#','\\\\'],$s);
+    }
 }
 ?>
