@@ -31,7 +31,7 @@ class Security {
         $key = "security:requestslimit:anonymous:$remoteAddress";
         $val = $valkey->get($key);
         $limitReached = false;
-    
+
         if ($val === '1') $limitReached = true;
         else if ($val === null) {
             $pdo ??= new LDPDO();
@@ -54,7 +54,7 @@ class Security {
         $key = "security:requestslimit:users:$userId";
         $val = $valkey->get($key);
         $limitReached = false;
-    
+
         if ($val === '1') $limitReached = true;
         else if ($val === null) {
             $pdo ??= new LDPDO();
@@ -77,7 +77,7 @@ class Security {
         $key = "security:apilimit:anonymous:$remoteAddress";
         $val = $valkey->get($key);
         $limitReached = false;
-    
+
         if ($val === '1') $limitReached = true;
         else if ($val === null) {
             $pdo ??= new LDPDO();
@@ -100,7 +100,7 @@ class Security {
         $key = "security:apilimit:users:$userId";
         $val = $valkey->get($key);
         $limitReached = false;
-    
+
         if ($val === '1') $limitReached = true;
         else if ($val === null) {
             $pdo ??= new LDPDO();
@@ -123,7 +123,7 @@ class Security {
         $key = "security:ip_bans:$remoteAddress";
         $val = $valkey->get($key);
         $banned = false;
-    
+
         if ($val === '1') $banned = true;
         else if ($val === null) {
             $pdo ??= new LDPDO();

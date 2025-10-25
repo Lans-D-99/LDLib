@@ -54,13 +54,13 @@ class GraphQLPrimary extends \GraphQL\GraphQL {
                     $queryHash = $useMD5ForQueryHash ? md5($queryHash.$json) : md5($queryHash.$json);
                 }
             } catch (\Exception $e) { Logger::logThrowable($e); }
-            
+
             $valkey = $queryHash != null ? new LDValkey() : null;
             if ($valkey?->get("validQueries:$queryHash") === '1') {
                 $newRules = [];
                 foreach ($validationRules as $rule) if ($rule instanceof QueryComplexity) $newRules[] = $rule;
                 $validationRules = $newRules;
-            } 
+            }
 
             if ($validationRules === null) {
                 $queryComplexity = DocumentValidator::getRule(QueryComplexity::class);
@@ -74,7 +74,7 @@ class GraphQLPrimary extends \GraphQL\GraphQL {
                     }
                 }
             }
-            
+
             $documentNode = $source instanceof DocumentNode
                 ? $source
                 : Parser::parse(new Source($source, 'GraphQL'));
@@ -97,7 +97,7 @@ class GraphQLPrimary extends \GraphQL\GraphQL {
                 $fieldResolver
             );
 
-            return $p; 
+            return $p;
         } catch (Error $e) {
             return $promiseAdapter->createFulfilled(
                 new ExecutionResult(null, [$e])

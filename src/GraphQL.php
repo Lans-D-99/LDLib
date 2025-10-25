@@ -151,7 +151,7 @@ class GraphQL {
                     }
                     $pdo->toPool();
                 });
-                
+
                 if ($user?->hasRole('Administrator') === true) {
                     $graphQLDuration = (string)((microtime(true) - $tGraphQL)*1000);
                     $output['processTime'] = "{$graphQLDuration}ms";

@@ -39,7 +39,7 @@ class WSServer {
 
     public static function init(string $rootPath, string $host, int $port, callable $resolver, int $mode=SWOOLE_PROCESS, int $sockType=SWOOLE_SOCK_TCP|SWOOLE_SSL, ?callable $onWorkerStart=null, ?array $settings=null) {
         if (!DataFetcher::$isWSDataFetcher) throw new \ErrorException('DataFetcher not configured.');
-        
+
         self::$rootPath = $rootPath;
         self::$withSSL = ($sockType & SWOOLE_SSL) !== 0;
         Logger::$name = 'WSServer('.getmypid().')';
@@ -106,7 +106,7 @@ class WSServer {
             'max_connection' => 100,
             'backlog' => 100,
             'max_request' => 50000,
-            
+
             'heartbeat_check_interval' => 600,
             'heartbeat_idle_time' => 1830,
 
@@ -240,7 +240,7 @@ class WSServer {
             GraphQL::buildSchema();
         });
         $workerExitAlreadyTriggered = false;
-        self::$server->on('workerexit',function(Server $server, int $workerId) use(&$workerExitAlreadyTriggered) { 
+        self::$server->on('workerexit',function(Server $server, int $workerId) use(&$workerExitAlreadyTriggered) {
             if (!$workerExitAlreadyTriggered) {
                 $workerExitAlreadyTriggered = true;
                 echo "Worker exiting : $workerId".PHP_EOL;
@@ -297,7 +297,7 @@ class WSServer {
         self::$server->on('beforeshutdown',function() use(&$serverShutdownAlreadyTriggered) {
             if ($serverShutdownAlreadyTriggered) return;
             $serverShutdownAlreadyTriggered = true;
-            
+
             echo "WebSocket server stopping.".PHP_EOL;
             Logger::log(LogLevel::INFO, 'Server', "WebSocket server stopping.");
             Timer::clearAll();

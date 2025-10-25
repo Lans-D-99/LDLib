@@ -70,13 +70,13 @@ class LDS3Client {
             ksort($headers);
             $curlHeaders = [];
             foreach ($headers as $k => $v) $curlHeaders[] = "$k: $v";
-    
+
             // Fetch resource
             $ch = get_curl_handle($host.$requestURI,$outHeaders);
             curl_setopt_array($ch,[
                 CURLOPT_HTTPHEADER => $curlHeaders
             ]);
-            
+
             return [$ch,&$outHeaders];
         };
 
@@ -168,7 +168,7 @@ class LDS3Client {
             ksort($headers);
             $curlHeaders = [];
             foreach ($headers as $k => $v) $curlHeaders[] = "$k: $v";
-    
+
             // Upload file
             $ch = get_curl_handle($host.$requestURI);
             curl_setopt_array($ch,[
@@ -176,7 +176,7 @@ class LDS3Client {
                 CURLOPT_HTTPHEADER => $curlHeaders,
                 CURLOPT_POSTFIELDS => $fileData
             ]);
-            
+
             return $ch;
         };
 
@@ -261,7 +261,7 @@ class LDS3Client {
             ]);
             return [$ch,&$outHeaders];
         };
-        
+
         // Do request
         $res = $prepRequest($this); $ch = $res[0]; $outHeaders =& $res[1];
         $v = curl_exec($ch);
@@ -316,7 +316,7 @@ class LDS3Client {
             ]);
             return [$ch,&$outHeaders];
         };
-        
+
         // Do request
         $res = $prepRequest($this); $ch = $res[0]; $outHeaders =& $res[1];
         $v = curl_exec($ch);

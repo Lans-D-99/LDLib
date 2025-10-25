@@ -72,7 +72,7 @@ class Github {
         if ($json == null) return null;
         $edges = $json['data']['repository']['refs']['nodes'][0]['target']['history']['edges'] ?? null;
         if ($edges == null) return null;
-        
+
         $commits = [];
         foreach ($edges as $edge) $commits[] = $edge['node']??null;
         return $commits;

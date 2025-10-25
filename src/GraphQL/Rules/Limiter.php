@@ -33,7 +33,7 @@ class Limiter extends ValidationRule {
             if ($nLimiter > ($o->limiterMaxVal)) { $context->reportError(new Error('Limiter triggered, query cancelled.',[$node])); return true; }
             return false;
         };
-        
+
         return [
             NodeKind::DIRECTIVE => function($node) use(&$nLimiter,$check) {
                 $nLimiter++;

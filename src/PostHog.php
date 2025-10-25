@@ -36,7 +36,7 @@ class PostHog {
     public bool $compress = true;
     public int $curlWaitTimeout;
     public bool $dontChangeURL;
-    
+
     public int $tsLastBatchSent;
     public int $forceSendBatchTimerId;
 
@@ -96,7 +96,7 @@ class PostHog {
         $this->tsLastBatchSent = time();
         $count = count($batch);
         if ($count < 1) return new OperationResult(SuccessType::SUCCESS,'Nothing to send.');
-        
+
         $ch = curl_init($this->dontChangeURL ? $this->host : "{$this->host}/batch");
 
         $payload = json_encode([
@@ -121,7 +121,7 @@ class PostHog {
         Logger::log(LogLevel::INFO, 'PostHog - SendBatch', "Sending $count events, batched.");
         $v = curl_exec($ch);
         $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        
+
         if ($v === false) {
             trigger_error(curl_error($ch));
             Logger::log(LogLevel::ERROR, 'PostHog - SendBatch', 'Unknown error.');

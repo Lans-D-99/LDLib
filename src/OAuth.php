@@ -34,7 +34,7 @@ enum OAuthScopes:string { // scopes are readonly by default
 class OAuth {
     public static string $urlRegex = '/^https:\/\/\S*?\.\S*?(?:[\s)\[\]{},;"\':<]|\.\s|$)/i';
     public static ?ReflectionEnum $scopesEnum = null;
-    
+
     public static bool $initialized = false;
 
     public static function init() {
@@ -195,7 +195,7 @@ class OAuth {
 
         $stmt = $pdo->prepare('UPDATE oauth_access_tokens SET refresh_token=?,access_token=?,expiration_date=?,token_type=?,scope=? WHERE client_id=? AND user_id=? LIMIT 1');
         $stmt->execute([$refreshToken,$accessToken,$expirationDate->format('Y-m-d H:i:s'),$tokenType,$finalScope,$clientId,$tokenRow['user_id']]);
-        
+
         $body = json_encode([
             'access_token' => $accessToken,
             'token_type' => $tokenType,

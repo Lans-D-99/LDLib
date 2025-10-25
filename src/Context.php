@@ -118,7 +118,7 @@ abstract class Context implements IPDOImplContext, IValkeyImplContext, IUserImpl
         if ($nValkeyLeaks > 0) { error_log('LEAK - '.print_r($this->valkeyConnsTraces,true)); Logger::log(LogLevel::ERROR,'Context - Connections','Valkey LEAKS: '.$nValkeyLeaks); }
     }
 
-    public function logQueryPathTime(array $path, ?float $time=null) {        
+    public function logQueryPathTime(array $path, ?float $time=null) {
         $aSub =& $this->gqlPathTimes;
         foreach ($path as $key) {
             if (!array_key_exists($key,$aSub)) $aSub[$key] = [];

@@ -37,7 +37,7 @@ abstract class User implements IIdentifiableUser {
 }
 
 abstract class UserSettings {
-    
+
 }
 
 interface IIdentifiableUser {

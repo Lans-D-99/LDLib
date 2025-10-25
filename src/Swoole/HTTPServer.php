@@ -162,7 +162,7 @@ class HTTPServer {
                 Logger::cleanLogFiles($sAutoCleanLogs);
                 Logger::cleanSwooleHTTPLogFiles($sAutoCleanLogs);
             });
-            
+
             $tSSLWatch = (int)$_SERVER['LD_WATCH_SSL_FILES'];
             if ($tSSLWatch > 0 && self::$withSSL && (file_exists($_SERVER['LD_SSL_CERT']) || file_exists($_SERVER['LD_SSL_KEY']))) {
                 echo "Listening for TLS file changes every {$tSSLWatch}s.".PHP_EOL;
@@ -250,12 +250,12 @@ class HTTPServer {
         });
 
         $workerExitAlreadyTriggered = false;
-        self::$server->on('workerexit',function(Server $server, int $workerId) use(&$workerExitAlreadyTriggered) { 
+        self::$server->on('workerexit',function(Server $server, int $workerId) use(&$workerExitAlreadyTriggered) {
             if ($workerExitAlreadyTriggered) return;
             $workerExitAlreadyTriggered = true;
             echo "Worker exiting : $workerId".PHP_EOL;
             Logger::log(LogLevel::INFO, 'Worker', "Worker exiting : $workerId");
-            
+
             go(fn() => PostHog::$main?->shutdown());
             Timer::clearAll();
         });
@@ -274,7 +274,7 @@ class HTTPServer {
         self::$server->on('beforeshutdown',function() use(&$serverShutdownAlreadyTriggered) {
             if ($serverShutdownAlreadyTriggered) return;
             $serverShutdownAlreadyTriggered = true;
-            
+
             echo "HTTP server stopping.".PHP_EOL;
             Logger::log(LogLevel::INFO, 'Server', "HTTP server stopping.");
             Timer::clearAll();

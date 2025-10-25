@@ -245,7 +245,6 @@ class Discord {
 
             $this->wssURL = $this->connectURL = $json['url'];
             $valkey->set('wssURL',$json['url'],['EX' => 3600*24*3]);
-
         }
         if (isset($this->resumeGatewayURL)) {
             $this->connectURL = $this->resumeGatewayURL;
@@ -258,7 +257,7 @@ class Discord {
             Logger::log(LogLevel::ERROR, 'DISCORD', "Couldn't overwrite commands: {$res['res']}");
             return false;
         }
-        
+
         $guilds = json_decode($res['res'],true);
         foreach ($guilds as $guild) {
             $res = $this->api_overwriteGuildApplicationCommands($guild['id'],$commands);
