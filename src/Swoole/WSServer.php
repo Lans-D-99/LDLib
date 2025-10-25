@@ -35,11 +35,13 @@ use Swoole\WebSocket\Frame;
 class WSServer {
     public static Server $server;
     public static string $rootPath;
+    public static bool $withSSL = false;
 
     public static function init(string $rootPath, string $host, int $port, callable $resolver, int $mode=SWOOLE_PROCESS, int $sockType=SWOOLE_SOCK_TCP|SWOOLE_SSL, ?callable $onWorkerStart=null, ?array $settings=null) {
         if (!DataFetcher::$isWSDataFetcher) throw new \ErrorException('DataFetcher not configured.');
         
         self::$rootPath = $rootPath;
+        self::$withSSL = ($sockType & SWOOLE_SSL) !== 0;
         Logger::$name = 'WSServer('.getmypid().')';
         Logger::$logDir = self::$rootPath.'/.serv/logs';
         if (!is_dir(self::$rootPath.'/.serv/logs/ws/swoole-logs')) mkdir(self::$rootPath.'/.serv/logs/ws/swoole-logs/',777,true);
@@ -156,7 +158,7 @@ class WSServer {
             });
 
             $tSSLWatch = (int)$_SERVER['LD_WATCH_SSL_FILES'];
-            if ($tSSLWatch > 0 && (file_exists($_SERVER['LD_SSL_CERT']) || file_exists($_SERVER['LD_SSL_KEY']))) {
+            if ($tSSLWatch > 0 && self::$withSSL && (file_exists($_SERVER['LD_SSL_CERT']) || file_exists($_SERVER['LD_SSL_KEY']))) {
                 echo "Listening for TLS file changes every {$tSSLWatch}s.".PHP_EOL;
                 $lastMTime1 = stat($_SERVER['LD_SSL_CERT'])['mtime']??-1;
                 $lastMTime2 = stat($_SERVER['LD_SSL_KEY'])['mtime']??-1;
