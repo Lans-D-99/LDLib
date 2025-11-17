@@ -396,7 +396,9 @@ class Discord {
             if ($frame == null) { Coroutine::sleep(0.1); continue; }
             if ($frame->opcode === 8) {
                 Logger::log(LogLevel::WARN, 'DISCORD', "Connection closed. (code: $frame?->code · reason: $frame?->reason)");
-                break;
+                // Reconnect in 5 seconds if Discord asks the connection to close for some reason
+                Coroutine::sleep(5);
+                return true;
             }
 
             switch ($processData($frame,$msTime)) {
