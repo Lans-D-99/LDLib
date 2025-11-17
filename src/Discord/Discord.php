@@ -173,6 +173,13 @@ enum TextInputStyle:Int {
     case PARAGRAPH = 2;
 }
 
+enum ApplicationCommandType:int {
+    case CHAT_INPUT = 1;
+    case USER = 2;
+    case MESSAGE = 3;
+    case PRIMARY_ENTRY_POINT = 4;
+}
+
 enum ApplicationCommandOptionType:Int {
     case SUB_COMMAND = 1;
     case SUB_COMMAND_GROUP = 2;
