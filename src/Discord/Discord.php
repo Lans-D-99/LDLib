@@ -226,6 +226,9 @@ class Discord {
 
     public \Closure $onMessageCreate;
     public \Closure $onInteractionCreate;
+    public \Closure $onGuildMemberAdd;
+    public \Closure $onGuildMemberRemove;
+    public \Closure $onGuildMemberUpdate;
 
     public function __construct(
         public string $botToken,
@@ -241,6 +244,9 @@ class Discord {
         $this->lastSequenceNumber = $valkey->get('lastSequenceNumber');
         $this->onMessageCreate = fn($o) => var_dump($o->data);
         $this->onInteractionCreate = fn($o) => var_dump($o->data);
+        $this->onGuildMemberAdd = fn($o) => null;
+        $this->onGuildMemberRemove = fn($o) => null;
+        $this->onGuildMemberUpdate = fn($o) => null;
 
         if ($this->wssURL == null) {
             $v = curl_quickRequest("$apiUrl/gateway/bot",[
@@ -326,6 +332,9 @@ class Discord {
                         case 'RESUMED': $connectFinalizationMaxTime = null; break;
                         case 'MESSAGE_CREATE': $this->onMessageCreate->call($this,$frame); break;
                         case 'INTERACTION_CREATE': $this->onInteractionCreate->call($this,$frame); break;
+                        case 'GUILD_MEMBER_ADD': $this->onGuildMemberAdd->call($this,$frame); break;
+                        case 'GUILD_MEMBER_REMOVE': $this->onGuildMemberRemove->call($this,$frame); break;
+                        case 'GUILD_MEMBER_UPDATE': $this->onGuildMemberUpdate->call($this,$frame); break;
                         default: Logger::log(LogLevel::WARN, 'DISCORD', "Unknown gateway event: $t"); break;
                     }
 
