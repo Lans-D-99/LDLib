@@ -173,6 +173,15 @@ enum TextInputStyle:Int {
     case PARAGRAPH = 2;
 }
 
+enum ButtonComponentStyle:Int {
+    case PRIMARY = 1;
+    case SECONDARY = 2;
+    case SUCCESS = 3;
+    case DANGER = 4;
+    case LINK = 5;
+    case PREMIUM = 6;
+}
+
 enum ApplicationCommandType:int {
     case CHAT_INPUT = 1;
     case USER = 2;
@@ -673,5 +682,9 @@ class Discord {
     public static function msgEscapeCharacters(string $s) {
         return str_replace(['*','/','#','\\'],['\*','\/','\#','\\\\'],$s);
     }
+}
+
+enum JsonErrorCodes:int {
+    case UNKNOWN_ROLE = 10011;
 }
 ?>
