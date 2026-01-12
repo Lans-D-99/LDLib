@@ -493,8 +493,12 @@ class Discord {
         ]));
     }
 
-    public function api_getCurrentUserGuilds() {
-        $res = curl_quickRequest("{$this->apiUrl}/users/@me/guilds",[
+    public function api_getCurrentUserGuilds(int $limit=200, ?string $after=null, ?string $before=null, bool $withCounts=false) {
+        $url = "{$this->apiUrl}/users/@me/guilds?limit=$limit";
+        if ($after !== null) $url .= "&after=$after";
+        if ($before !== null) $url .= "&before=$before";
+        if ($withCounts === true) $url .= "&withCounts=true";
+        $res = curl_quickRequest($url,[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
         ],10);
