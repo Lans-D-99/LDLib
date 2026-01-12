@@ -536,6 +536,18 @@ class Discord {
         return $res;
     }
 
+    public function api_listGuildMembers(string $serverId, int $limit=1, ?string $after=null) {
+        $url = "{$this->apiUrl}/guilds/$serverId/members?limit=$limit";
+        if ($after !== null) $url .= "&after=$after";
+        $res = curl_quickRequest($url,[
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
+        ],10);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "listGuildMembers '$serverId': unexpected http code {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
     public function api_addGuildMemberRole(string $serverId, string $userId, string $roleId) {
         $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId/roles/$roleId",[
             CURLOPT_RETURNTRANSFER => true,
@@ -583,6 +595,17 @@ class Discord {
         return $res;
     }
 
+    public function api_modifyGuildRolePositions(string $serverId, array $data) {
+        $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles",[
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
+            CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
+        ],10);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "modifyGuildRolePositions '$serverId': unexpected httpCode {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
     public function api_modifyGuildRole(string $serverId, string $roleId, ?string $name=null, ?string $permissions=null, array $colors=['primary_color'=>0], ?bool $hoist=null, ?string $icon=null, ?string $unicodeEmoji=null, ?bool $mentionable=null) {
         $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
             CURLOPT_CUSTOMREQUEST => 'PATCH',
@@ -599,6 +622,16 @@ class Discord {
             ], JSON_THROW_ON_ERROR)
         ],10);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "modifyGuildRole '$serverId'-'$roleId': unexpected httpCode {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
+    public function api_deleteGuildRole(string $serverId, string $roleId) {
+        $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
+            CURLOPT_CUSTOMREQUEST => 'DELETE',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"]
+        ],10);
+        if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "deleteGuildRole '$serverId': unexpected httpCode {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
