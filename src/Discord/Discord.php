@@ -429,7 +429,7 @@ class Discord {
         }
     }
 
-    public function registerRole(LDPDO $pdo, string $serverId, ?string $name="new role", ?string $permissions=null, int $color=0, bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false) {
+    public function registerRole(LDPDO $pdo, string $serverId, ?string $name="new role", ?string $permissions=null, array $colors=['primary_color'=>0], bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false) {
         $stmt = $pdo->prepare('SELECT * FROM server_roles WHERE server_id=? AND name=?');
         $stmt->execute([$serverId,$name]);
         $row = $stmt->fetch();
@@ -444,7 +444,7 @@ class Discord {
             }
         }
         if ($row === false) {
-            $res = $this->api_createGuildRole($serverId,$name,$permissions,$color,$hoist,$icon,$unicodeEmoji,$mentionable);
+            $res = $this->api_createGuildRole($serverId,$name,$permissions,$colors,$hoist,$icon,$unicodeEmoji,$mentionable);
             if ($res['httpCode'] !== 200) { Logger::log(LogLevel::ERROR,'DISCORD',"registerRole: '$name' failure. (server_id: $serverId)"); return null; }
             $role = json_decode($res['res'],true);
             $stmt = $pdo->prepare('INSERT INTO server_roles(server_id,name,id) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=VALUE(id) RETURNING *');
@@ -556,14 +556,14 @@ class Discord {
         return $res;
     }
 
-    public function api_createGuildRole(string $serverId, ?string $name="new role", ?string $permissions=null, int $color=0, bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false) {
+    public function api_createGuildRole(string $serverId, ?string $name="new role", ?string $permissions=null, array $colors=['primary_color'=>0], bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false) {
         $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode([
                 'name' => $name,
                 'permissions' => $permissions,
-                'color' => $color,
+                'colors' => $colors,
                 'hoist' => $hoist,
                 'icon' => $icon,
                 'unicode_emoji' => $unicodeEmoji,
@@ -574,7 +574,7 @@ class Discord {
         return $res;
     }
 
-    public function api_modifyGuildRole(string $serverId, string $roleId, ?string $name=null, ?string $permissions=null, ?int $color=null, ?bool $hoist=null, ?string $icon=null, ?string $unicodeEmoji=null, ?bool $mentionable=null) {
+    public function api_modifyGuildRole(string $serverId, string $roleId, ?string $name=null, ?string $permissions=null, array $colors=['primary_color'=>0], ?bool $hoist=null, ?string $icon=null, ?string $unicodeEmoji=null, ?bool $mentionable=null) {
         $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
             CURLOPT_CUSTOMREQUEST => 'PATCH',
             CURLOPT_RETURNTRANSFER => true,
@@ -582,7 +582,7 @@ class Discord {
             CURLOPT_POSTFIELDS => json_encode([
                 'name' => $name,
                 'permissions' => $permissions,
-                'color' => $color,
+                'colors' => $colors,
                 'hoist' => $hoist,
                 'icon' => $icon,
                 'unicode_emoji' => $unicodeEmoji,
