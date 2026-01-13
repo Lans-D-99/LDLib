@@ -493,96 +493,96 @@ class Discord {
         ]));
     }
 
-    public function api_getCurrentUserGuilds(int $limit=200, ?string $after=null, ?string $before=null, bool $withCounts=false) {
+    public function api_getCurrentUserGuilds(int $limit=200, ?string $after=null, ?string $before=null, bool $withCounts=false, int $retryXTimes=1) {
         $url = "{$this->apiUrl}/users/@me/guilds?limit=$limit";
         if ($after !== null) $url .= "&after=$after";
         if ($before !== null) $url .= "&before=$before";
         if ($withCounts === true) $url .= "&withCounts=true";
-        $res = curl_quickRequest($url,[
+        do $res = curl_quickRequest($url,[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_getCurrentUserGuilds : unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_createDM(string $recipientId) {
-        $res = curl_quickRequest("{$this->apiUrl}/users/@me/channels",[
+    public function api_createDM(string $recipientId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/users/@me/channels",[
             CURLOPT_CUSTOMREQUEST => 'POST',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode([
                 'recipient_id' => $recipientId
             ], JSON_THROW_ON_ERROR)
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_createDM : unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_createMessage(string $channelId, array $data) {
-        $res = curl_quickRequest("{$this->apiUrl}/channels/{$channelId}/messages",[
+    public function api_createMessage(string $channelId, array $data, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/channels/{$channelId}/messages",[
             CURLOPT_CUSTOMREQUEST => 'POST',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_createMessage : unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_getGuildMember(string $serverId, string $userId) {
-        $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId",[
+    public function api_getGuildMember(string $serverId, string $userId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => 'GET',
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "getGuildMember '$serverId'-'$userId': unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_listGuildMembers(string $serverId, int $limit=1, ?string $after=null) {
+    public function api_listGuildMembers(string $serverId, int $limit=1, ?string $after=null, int $retryXTimes=1) {
         $url = "{$this->apiUrl}/guilds/$serverId/members?limit=$limit";
         if ($after !== null) $url .= "&after=$after";
-        $res = curl_quickRequest($url,[
+        do $res = curl_quickRequest($url,[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => 'GET',
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "listGuildMembers '$serverId': unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_addGuildMemberRole(string $serverId, string $userId, string $roleId) {
-        $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId/roles/$roleId",[
+    public function api_addGuildMemberRole(string $serverId, string $userId, string $roleId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId/roles/$roleId",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => 'PUT',
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "addGuildMemberRole '$userId'-'$roleId': unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_removeGuildMemberRole(string $serverId, string $userId, string $roleId) {
-        $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId/roles/$roleId",[
+    public function api_removeGuildMemberRole(string $serverId, string $userId, string $roleId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId/roles/$roleId",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => 'DELETE',
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "addGuildMemberRole '$userId'-'$roleId': unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_getGuildRole(string $serverId, string $roleId) {
-        $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
+    public function api_getGuildRole(string $serverId, string $roleId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200 && $res['httpCode'] !== 429) Logger::log(LogLevel::ERROR, 'DISCORD', "getGuildRole '$roleId' error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_createGuildRole(string $serverId, ?string $name="new role", ?string $permissions=null, array $colors=['primary_color'=>0], bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false) {
-        $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles",[
+    public function api_createGuildRole(string $serverId, ?string $name="new role", ?string $permissions=null, array $colors=['primary_color'=>0], bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode([
@@ -594,24 +594,24 @@ class Discord {
                 'unicode_emoji' => $unicodeEmoji,
                 'mentionable' => $mentionable
             ], JSON_THROW_ON_ERROR)
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "createGuildRole error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_modifyGuildRolePositions(string $serverId, array $data) {
-        $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles",[
+    public function api_modifyGuildRolePositions(string $serverId, array $data, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles",[
             CURLOPT_CUSTOMREQUEST => 'PATCH',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "modifyGuildRolePositions '$serverId': unexpected httpCode {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_modifyGuildRole(string $serverId, string $roleId, ?string $name=null, ?string $permissions=null, array $colors=['primary_color'=>0], ?bool $hoist=null, ?string $icon=null, ?string $unicodeEmoji=null, ?bool $mentionable=null) {
-        $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
+    public function api_modifyGuildRole(string $serverId, string $roleId, ?string $name=null, ?string $permissions=null, array $colors=['primary_color'=>0], ?bool $hoist=null, ?string $icon=null, ?string $unicodeEmoji=null, ?bool $mentionable=null, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
             CURLOPT_CUSTOMREQUEST => 'PATCH',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
@@ -624,94 +624,94 @@ class Discord {
                 'unicode_emoji' => $unicodeEmoji,
                 'mentionable' => $mentionable
             ], JSON_THROW_ON_ERROR)
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "modifyGuildRole '$serverId'-'$roleId': unexpected httpCode {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_deleteGuildRole(string $serverId, string $roleId) {
-        $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
+    public function api_deleteGuildRole(string $serverId, string $roleId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
             CURLOPT_CUSTOMREQUEST => 'DELETE',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"]
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "deleteGuildRole '$serverId': unexpected httpCode {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_overwriteGuildApplicationCommands(string $serverId, array $commands) {
-        $res = curl_quickRequest("{$this->apiUrl}/applications/{$this->botId}/guilds/$serverId/commands",[
+    public function api_overwriteGuildApplicationCommands(string $serverId, array $commands, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/applications/{$this->botId}/guilds/$serverId/commands",[
             CURLOPT_CUSTOMREQUEST => "PUT",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode($commands, JSON_THROW_ON_ERROR)
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "overwriteGuildApplicationCommands error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_createInteractionResponse(string $interactionId, string $interactionToken, InteractionCallbackType $type, array $data) {
-        $res = curl_quickRequest("{$this->apiUrl}/interactions/$interactionId/$interactionToken/callback?with_response=true",[
+    public function api_createInteractionResponse(string $interactionId, string $interactionToken, InteractionCallbackType $type, array $data, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/interactions/$interactionId/$interactionToken/callback?with_response=true",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode([
                 'type' => $type->value,
                 'data' => $data
             ], JSON_THROW_ON_ERROR)
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "createInteractionResponse error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_editOriginalInteractionResponse(string $interactionToken, array $data) {
-        $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/@original",[
+    public function api_editOriginalInteractionResponse(string $interactionToken, array $data, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/@original",[
             CURLOPT_CUSTOMREQUEST => "PATCH",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "editOriginalInteractionResponse error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_createFollowupMessage(string $interactionToken, array $data, $wait=false, $withComponents=false) {
+    public function api_createFollowupMessage(string $interactionToken, array $data, $wait=false, $withComponents=false, int $retryXTimes=1) {
         $bWait = $wait ? 'true' : 'false';
         $bComponents = $withComponents ? 'true' : 'false';
-        $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken?wait=$bWait&with_components=$bComponents",[
+        do $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken?wait=$bWait&with_components=$bComponents",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "createFollowupMessage error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_getFollowupMessage(string $interactionToken, string $messageId) {
-        $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/$messageId",[
+    public function api_getFollowupMessage(string $interactionToken, string $messageId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/$messageId",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200 && $res['httpCode'] !== 429) Logger::log(LogLevel::ERROR, 'DISCORD', "getFollowupMessage '$messageId' error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_editFollowupMessage(string $interactionToken, string $messageId, array $data) {
-        $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/$messageId",[
+    public function api_editFollowupMessage(string $interactionToken, string $messageId, array $data, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/$messageId",[
             CURLOPT_CUSTOMREQUEST => 'PATCH',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ['Content-Type: application/json', "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "editFollowupMessage '$messageId' error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
-    public function api_deleteFollowupMessage(string $interactionToken, string $messageId) {
-        $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/$messageId",[
+    public function api_deleteFollowupMessage(string $interactionToken, string $messageId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/$messageId",[
             CURLOPT_CUSTOMREQUEST => 'DELETE',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"],
-        ],10);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "deleteFollowupMessage '$messageId' error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
