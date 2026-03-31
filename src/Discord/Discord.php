@@ -219,6 +219,11 @@ enum MessageFlags:Int {
     case IS_COMPONENTS_V2 = 1 << 15;
 }
 
+enum MessageReferenceType:int {
+    case DEFAULT = 0;
+    case FORWARD = 1;
+}
+
 class Discord {
     public string $botId;
 
