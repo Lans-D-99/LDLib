@@ -501,7 +501,7 @@ class Discord {
         do $res = curl_quickRequest($url,[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_getCurrentUserGuilds : unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -514,7 +514,7 @@ class Discord {
             CURLOPT_POSTFIELDS => json_encode([
                 'recipient_id' => $recipientId
             ], JSON_THROW_ON_ERROR)
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_createDM : unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -525,7 +525,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_createMessage : unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -535,7 +535,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => 'GET',
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "getGuildMember '$serverId'-'$userId': unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -547,7 +547,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => 'GET',
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "listGuildMembers '$serverId': unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -557,7 +557,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => 'PUT',
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "addGuildMemberRole '$userId'-'$roleId': unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -567,7 +567,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => 'DELETE',
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "addGuildMemberRole '$userId'-'$roleId': unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -576,7 +576,7 @@ class Discord {
         do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200 && $res['httpCode'] !== 429) Logger::log(LogLevel::ERROR, 'DISCORD', "getGuildRole '$roleId' error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -594,7 +594,7 @@ class Discord {
                 'unicode_emoji' => $unicodeEmoji,
                 'mentionable' => $mentionable
             ], JSON_THROW_ON_ERROR)
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "createGuildRole error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -605,7 +605,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "modifyGuildRolePositions '$serverId': unexpected httpCode {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -624,7 +624,7 @@ class Discord {
                 'unicode_emoji' => $unicodeEmoji,
                 'mentionable' => $mentionable
             ], JSON_THROW_ON_ERROR)
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "modifyGuildRole '$serverId'-'$roleId': unexpected httpCode {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -634,7 +634,7 @@ class Discord {
             CURLOPT_CUSTOMREQUEST => 'DELETE',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"]
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "deleteGuildRole '$serverId': unexpected httpCode {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -645,7 +645,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode($commands, JSON_THROW_ON_ERROR)
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "overwriteGuildApplicationCommands error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -658,7 +658,7 @@ class Discord {
                 'type' => $type->value,
                 'data' => $data
             ], JSON_THROW_ON_ERROR)
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "createInteractionResponse error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -669,7 +669,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "editOriginalInteractionResponse error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -681,7 +681,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "createFollowupMessage error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -690,7 +690,7 @@ class Discord {
         do $res = curl_quickRequest("{$this->apiUrl}/webhooks/{$this->botId}/$interactionToken/messages/$messageId",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200 && $res['httpCode'] !== 429) Logger::log(LogLevel::ERROR, 'DISCORD', "getFollowupMessage '$messageId' error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -701,7 +701,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ['Content-Type: application/json', "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "editFollowupMessage '$messageId' error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
@@ -711,7 +711,7 @@ class Discord {
             CURLOPT_CUSTOMREQUEST => 'DELETE',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"],
-        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 204) Logger::log(LogLevel::ERROR, 'DISCORD', "deleteFollowupMessage '$messageId' error {$res['httpCode']}: {$res['res']}");
         return $res;
     }
