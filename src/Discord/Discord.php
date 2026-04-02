@@ -239,6 +239,7 @@ class Discord {
     public array $queued = [];
 
     public \Closure $onMessageCreate;
+    public \Closure $onMessageUpdate;
     public \Closure $onInteractionCreate;
     public \Closure $onGuildMemberAdd;
     public \Closure $onGuildMemberRemove;
@@ -257,6 +258,7 @@ class Discord {
         $this->sessionID = $valkey->get('sessionID');
         $this->lastSequenceNumber = $valkey->get('lastSequenceNumber');
         $this->onMessageCreate = fn($o) => var_dump($o->data);
+        $this->onMessageUpdate = fn($o) => var_dump($o->data);
         $this->onInteractionCreate = fn($o) => var_dump($o->data);
         $this->onGuildMemberAdd = fn($o) => null;
         $this->onGuildMemberRemove = fn($o) => null;
@@ -345,6 +347,7 @@ class Discord {
                         case 'READY': $connectFinalizationMaxTime = null; break;
                         case 'RESUMED': $connectFinalizationMaxTime = null; break;
                         case 'MESSAGE_CREATE': $this->onMessageCreate->call($this,$frame); break;
+                        case 'MESSAGE_UPDATE': $this->onMessageUpdate->call($this,$frame); break;
                         case 'INTERACTION_CREATE': $this->onInteractionCreate->call($this,$frame); break;
                         case 'GUILD_MEMBER_ADD': $this->onGuildMemberAdd->call($this,$frame); break;
                         case 'GUILD_MEMBER_REMOVE': $this->onGuildMemberRemove->call($this,$frame); break;
