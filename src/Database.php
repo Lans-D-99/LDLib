@@ -32,7 +32,7 @@ class LDPDO {
     public string $instanceId;
     public ?\PDO $pdo;
     public array $locks = [];
-    public bool $skipTransactionCommands = false;
+    public int $nSkipTransactionCommands = 0;
 
     public function __construct(public ?Context $context=null) {
         $this->instanceId = bin2hex(random_bytes(8));
@@ -40,13 +40,13 @@ class LDPDO {
     }
 
     public function query(string $query, ?int $fetchMode = null, ?int $cost=null):\PDOStatement|false {
-        if ($this->skipTransactionCommands && self::isTransactionCommand($query)) return false;
+        if ($this->nSkipTransactionCommands > 0 && self::isTransactionCommand($query)) return false;
         if ($this->context != null) $this->context->dbcost += $cost ?? 1;
         return $this->pdo->query($query,$fetchMode);
     }
 
     public function prepare(string $query, array $options=[], ?int $cost=null):\PDOStatement|false {
-        if ($this->skipTransactionCommands && self::isTransactionCommand($query)) return false;
+        if ($this->nSkipTransactionCommands > 0 && self::isTransactionCommand($query)) return false;
         if ($this->context != null) $this->context->dbcost += $cost ?? 1;
         return $this->pdo->prepare($query,$options);
     }
@@ -65,12 +65,13 @@ class LDPDO {
 
     public function toPool(bool $rollback=false) {
         if ($rollback) $this->query('ROLLBACK');
-        $this->skipTransactionCommands = false;
+        $this->nSkipTransactionCommands = 0;
         if ($this->context != null) $this->context->pdoConnsTraces->remove($this->instanceId,'');
         WorkerContext::$pdoConnectionPool->put($this);
     }
 
     public function close() {
+        $this->nSkipTransactionCommands = 0;
         $this->pdo = null;
     }
 
@@ -78,11 +79,20 @@ class LDPDO {
         foreach ($this->locks as $lock) $this->query("SELECT RELEASE_LOCK('$lock')");
     }
 
+    public function skipTransactionCommands() {
+        return $this->nSkipTransactionCommands <= 0 ? ++$this->nSkipTransactionCommands : $this->nSkipTransactionCommands;
+    }
+
+    public function stopSkipTransactionCommands() {
+        return $this->nSkipTransactionCommands > 0 ? --$this->nSkipTransactionCommands : $this->nSkipTransactionCommands;
+    }
+
     public function assureConnectionIsAlive() {
         try {
             $this->query('SELECT 1');
         } catch (PDOException $e) {
             $this->pdo = PDO::getConnection();
+            $this->nSkipTransactionCommands = 0;
         }
     }
 
