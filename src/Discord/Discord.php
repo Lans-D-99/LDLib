@@ -560,6 +560,25 @@ class Discord {
         return $res;
     }
 
+    public function api_modifyGuildMember(string $serverId, string $userId, ?string $nick=null, ?array $roles=null, ?bool $mute=null, ?bool $deaf=null, ?string $channelId=null, ?string $communicationDisabledUntil=null, ?int $flags=null, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId",[
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
+            CURLOPT_POSTFIELDS => json_encode([
+                'nick' => $nick,
+                'roles' => $roles,
+                'mute' => $mute,
+                'deaf' => $deaf,
+                'channel_id' => $channelId,
+                'communication_disabled_until' => $communicationDisabledUntil,
+                'flags' => $flags
+            ], JSON_THROW_ON_ERROR)
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "modifyGuildMember '$serverId'-'$userId': unexpected httpCode {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
     public function api_addGuildMemberRole(string $serverId, string $userId, string $roleId, int $retryXTimes=1) {
         do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/members/$userId/roles/$roleId",[
             CURLOPT_RETURNTRANSFER => true,
