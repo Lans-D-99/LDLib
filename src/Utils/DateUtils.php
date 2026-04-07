@@ -19,9 +19,19 @@ namespace LDLib\Utils\DateUtils;
 
 use DateInterval;
 use DateTime;
+use DateTimeImmutable;
+
+
+function date_at_start_of_day(string $dateString) {
+    return new DateTime(new DateTimeImmutable($dateString)->format('Y-m-d'));
+}
+
+function date_at_end_of_day(string $dateString) {
+    return new DateTime(new DateTimeImmutable($dateString)->format('Y-m-d 23:59:59.999999'));
+}
 
 function date_at_start_of_week(string $dateString, bool $startIsSunday=false) {
-    $dt = new DateTime($dateString);
+    $dt = new DateTime(new DateTimeImmutable($dateString)->format('Y-m-d'));
     if ($startIsSunday) {
         $dayOfWeek = (int)$dt->format('w');
         if ($dayOfWeek > 0) $dt->sub(new DateInterval('P'.$dayOfWeek.'D'));
@@ -33,7 +43,7 @@ function date_at_start_of_week(string $dateString, bool $startIsSunday=false) {
 }
 
 function date_at_end_of_week(string $dateString, bool $startIsSunday=false) {
-    $dt = new DateTime($dateString);
+    $dt = new DateTime(new DateTimeImmutable($dateString)->format('Y-m-d 23:59:59.999999'));
     if ($startIsSunday) {
         $dayOfWeek = (int)$dt->format('w');
         if ($dayOfWeek < 6) $dt->add(new DateInterval('P'.(6-$dayOfWeek).'D'));
@@ -41,6 +51,16 @@ function date_at_end_of_week(string $dateString, bool $startIsSunday=false) {
         $dayOfWeek = (int)$dt->format('N');
         if ($dayOfWeek < 7) $dt->add(new DateInterval('P'.(7-$dayOfWeek).'D'));
     }
+    return $dt;
+}
+
+function date_at_start_of_month(string $dateString) {
+    return new DateTime(new DateTimeImmutable($dateString)->format('Y-m'));
+}
+
+function date_at_end_of_month(string $dateString) {
+    $dt = new DateTime(new DateTimeImmutable($dateString)->format('Y-m-01 23:59:59.999999'));
+    $dt->add(new DateInterval('P1M'))->sub(new DateInterval('P1D'));
     return $dt;
 }
 ?>
