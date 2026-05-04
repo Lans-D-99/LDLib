@@ -24,9 +24,7 @@ class Emoji {
     public ?bool $animated = null;
     public ?bool $available = null;
 
-    public function __construct(public ?string $id, public ?string $name) {
-        throw new \Exception('Not implemented');
-    }
+    public function __construct(public ?string $id, public ?string $name) { }
 
     public function toArray():array {
         $a = [

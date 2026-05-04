@@ -40,7 +40,7 @@ abstract class Component {
 }
 
 abstract class ComponentsContainer extends Component {
-    private array $components;
+    private array $components = [];
 
     public function __construct(ComponentType $type, ?int $id=null) {
         parent::__construct($type, $id);
@@ -54,12 +54,16 @@ abstract class ComponentsContainer extends Component {
         array_splice($this->components, $index, 0, [$c]);
     }
 
+    public function length():int {
+        return count($this->components);
+    }
+
     public function toArray() {
         $a = [];
         foreach ($this->components as $c) { $a[] = $c->toArray(); }
         return [
             'id' => $this->id,
-            'type' => $this->type,
+            'type' => $this->type->value,
             'components' => $a
         ];
     }
@@ -103,7 +107,7 @@ class Button extends Component {
 }
 
 class StringSelect extends Component {
-    public array $options = [];
+    private array $options = [];
     public ?bool $disabled = null;
 
     public function __construct(
@@ -111,7 +115,7 @@ class StringSelect extends Component {
         parent::__construct(ComponentType::STRING_SELECT, $id);
     }
 
-    public function addOption(string $label, string $value, ?string $description, ?string $emojiId=null, ?string $emojiName=null, ?bool $emojiAnimated=null, ?bool $default=false) {
+    public function addOption(string $label, string $value, ?string $description=null, ?string $emojiId=null, ?string $emojiName=null, ?bool $emojiAnimated=null, ?bool $default=false) {
         $emoji = new Emoji($emojiId,$emojiName);
         $emoji->animated = $emojiAnimated;
         $this->options[] = [
@@ -121,6 +125,10 @@ class StringSelect extends Component {
             'emoji' => $emoji->id === null ? null : $emoji->toArray(),
             'default' => $default
         ];
+    }
+
+    public function optionsCount() {
+        return count($this->options);
     }
 
     #[\Override]
@@ -139,9 +147,7 @@ class StringSelect extends Component {
 }
 
 class TextInput extends Component {
-    public string $value = '';
-
-    public function __construct(public string $customId, public string $placeholder='', public TextInputStyle $style=TextInputStyle::SHORT, public ?int $minLength=null, public ?int $maxLength=null, public ?bool $required=true, ?int $id=null) {
+    public function __construct(public string $customId, public string $placeholder='', public string $value='', public TextInputStyle $style=TextInputStyle::SHORT, public ?int $minLength=null, public ?int $maxLength=null, public ?bool $required=true, ?int $id=null) {
         parent::__construct(ComponentType::TEXT_INPUT, $id);
     }
 
@@ -150,8 +156,8 @@ class TextInput extends Component {
         $a = parent::toArray();
         if (isset($this->minLength)) $a['min_length'] = $this->minLength;
         if (isset($this->maxLength)) $a['max_length'] = $this->maxLength;
-        if (isset($this->value)) $a['value'] = $this->value;
-        if (isset($this->placeholder)) $a['placeholder'] = $this->placeholder;
+        if (!empty($this->value)) $a['value'] = $this->value;
+        if (!empty($this->value)) $a['placeholder'] = $this->placeholder;
         return array_merge($a,[
             'custom_id' => $this->customId,
             'style' => $this->style->value,
