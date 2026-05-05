@@ -25,6 +25,7 @@ use LDLib\Logger\LogLevel;
 use Swoole\Coroutine;
 
 use function LDLib\Net\curl_quickRequest;
+use function Swoole\Coroutine\go;
 
 enum Intents:int {
     case GUILDS = 1;
@@ -362,12 +363,12 @@ class Discord {
                     switch ($t) {
                         case 'READY': $connectFinalizationMaxTime = null; break;
                         case 'RESUMED': $connectFinalizationMaxTime = null; break;
-                        case 'MESSAGE_CREATE': $this->onMessageCreate->call($this,$frame); break;
-                        case 'MESSAGE_UPDATE': $this->onMessageUpdate->call($this,$frame); break;
-                        case 'INTERACTION_CREATE': $this->onInteractionCreate->call($this,$frame); break;
-                        case 'GUILD_MEMBER_ADD': $this->onGuildMemberAdd->call($this,$frame); break;
-                        case 'GUILD_MEMBER_REMOVE': $this->onGuildMemberRemove->call($this,$frame); break;
-                        case 'GUILD_MEMBER_UPDATE': $this->onGuildMemberUpdate->call($this,$frame); break;
+                        case 'MESSAGE_CREATE': go(function() use ($frame) { $this->onMessageCreate->call($this,$frame); }); break;
+                        case 'MESSAGE_UPDATE': go(function() use ($frame) { $this->onMessageUpdate->call($this,$frame); }); break;
+                        case 'INTERACTION_CREATE': go(function() use ($frame) { $this->onInteractionCreate->call($this,$frame); }); break;
+                        case 'GUILD_MEMBER_ADD': go(function() use ($frame) { $this->onGuildMemberAdd->call($this,$frame); }); break;
+                        case 'GUILD_MEMBER_REMOVE': go(function() use ($frame) { $this->onGuildMemberRemove->call($this,$frame); }); break;
+                        case 'GUILD_MEMBER_UPDATE': go(function() use ($frame) { $this->onGuildMemberUpdate->call($this,$frame); }); break;
                         default: Logger::log(LogLevel::WARN, 'DISCORD', "Unknown gateway event: $t"); break;
                     }
 
