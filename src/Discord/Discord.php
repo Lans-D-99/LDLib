@@ -255,6 +255,7 @@ class Discord {
 
     public array $queued = [];
 
+    public \Closure $onThreadCreate;
     public \Closure $onMessageCreate;
     public \Closure $onMessageUpdate;
     public \Closure $onInteractionCreate;
@@ -274,9 +275,10 @@ class Discord {
         $this->resumeGatewayURL = $valkey->get('resumeGatewayURL');
         $this->sessionID = $valkey->get('sessionID');
         $this->lastSequenceNumber = $valkey->get('lastSequenceNumber');
-        $this->onMessageCreate = fn($o) => var_dump($o->data);
-        $this->onMessageUpdate = fn($o) => var_dump($o->data);
-        $this->onInteractionCreate = fn($o) => var_dump($o->data);
+        $this->onThreadCreate = fn($o) => null;
+        $this->onMessageCreate = fn($o) => null;
+        $this->onMessageUpdate = fn($o) => null;
+        $this->onInteractionCreate = fn($o) => null;
         $this->onGuildMemberAdd = fn($o) => null;
         $this->onGuildMemberRemove = fn($o) => null;
         $this->onGuildMemberUpdate = fn($o) => null;
@@ -369,6 +371,14 @@ class Discord {
                         case 'GUILD_MEMBER_ADD': go(function() use ($frame) { $this->onGuildMemberAdd->call($this,$frame); }); break;
                         case 'GUILD_MEMBER_REMOVE': go(function() use ($frame) { $this->onGuildMemberRemove->call($this,$frame); }); break;
                         case 'GUILD_MEMBER_UPDATE': go(function() use ($frame) { $this->onGuildMemberUpdate->call($this,$frame); }); break;
+                        case 'THREAD_CREATE': go(function() use ($frame) { $this->onThreadCreate->call($this,$frame); }); break;
+                        case 'GUILD_CREATE': case 'GUILD_UPDATE': case 'GUILD_DELETE': case 'GUILD_ROLE_CREATE':
+                        case 'GUILD_ROLE_UPDATE': case 'GUILD_ROLE_DELETE': case 'CHANNEL_CREATE': case 'CHANNEL_UPDATE':
+                        case 'CHANNEL_DELETE': case 'CHANNEL_PINS_UPDATE': case 'THREAD_UPDATE':
+                        case 'THREAD_DELETE': case 'THREAD_LIST_SYNC': case 'THREAD_MEMBER_UPDATE': case 'THREAD_MEMBERS_UPDATE':
+                        case 'STAGE_INSTANCE_CREATE': case 'STAGE_INSTANCE_UPDATE': case 'STAGE_INSTANCE_DELETE':
+                        case 'VOICE_CHANNEL_STATUS_UPDATE': case 'VOICE_CHANNEL_START_TIME_UPDATE':
+                            break;
                         default: Logger::log(LogLevel::WARN, 'DISCORD', "Unknown gateway event: $t"); break;
                     }
 
