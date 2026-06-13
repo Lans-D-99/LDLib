@@ -17,11 +17,14 @@
  *****************************************************************************/
 namespace LDLib\Utils;
 
+use LDLib\Cache\LDValkey;
 use LDLib\Logger\Logger;
 use LDLib\Logger\LogLevel;
 use LDLib\Server\ServerContext;
 use SoftCreatR\MimeDetector\MimeDetector;
 use Swoole\Http\Request;
+
+use function LDLib\Net\curl_fetch;
 
 class Utils {
     public static function getRootLink(?string $sub = null) {
@@ -260,6 +263,19 @@ class Utils {
             'size' => $stat['size'],
             'type' => self::getMimeType($filePath)
         ];
+    }
+
+    public static function getExchangeRate(LDValkey $valkey, string $fromCurrency, int $expiresIn=3600*6) {
+        $fromCurrency = strtolower($fromCurrency);
+        $k = "exchangeRates:{$fromCurrency}";
+        $v = $valkey->get($k);
+        if (empty($v)) {
+            $res = curl_fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/$fromCurrency.json");
+            if ($res['httpCode'] !== 200) return null;
+            $v = $res['res'];
+            $valkey->set($k,$v,['EX' => $expiresIn]);
+        }
+        return $v;
     }
 
     public static function getEnumValue(string $enum, mixed $value) {
