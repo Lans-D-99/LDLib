@@ -252,6 +252,16 @@ class Utils {
         return $mimeType;
     }
 
+    public static function makeFileArray(string $filePath):array {
+        $stat = stat($filePath);
+        return [
+            'tmp_name' => $filePath,
+            'name' => basename($filePath),
+            'size' => $stat['size'],
+            'type' => self::getMimeType($filePath)
+        ];
+    }
+
     public static function getEnumValue(string $enum, mixed $value) {
         $cases = $enum::cases();
         $index = array_search($value, array_column($cases,'name'));
