@@ -140,6 +140,9 @@ enum ComponentType:Int {
     case SEPARATOR = 14;
     case CONTAINER = 17;
     case LABEL = 18;
+    case RADIO_GROUP = 21;
+    case CHECKBOX_GROUP = 22;
+    case CHECKBOX = 23;
 }
 
 enum ActionRowChildComponent:Int {

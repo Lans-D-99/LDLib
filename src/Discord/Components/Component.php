@@ -406,4 +406,64 @@ class Label extends Component {
         ]);
     }
 }
+
+class RadioGroup extends Component {
+    public array $options = [];
+    public function __construct(public string $customId, public bool $required=true, ?int $id=null) {
+        return parent::__construct(ComponentType::RADIO_GROUP, $id);
+    }
+
+    public function addOption(string $value, string $label, ?string $description=null, bool $default=false) {
+        $this->options[] = ['value' => $value, 'label' => $label, 'description' => $description, 'default' => $default];
+    }
+
+    #[\Override]
+    public function toArray() {
+        $a = parent::toArray();
+        return array_merge($a,[
+            'custom_id' => $this->customId,
+            'options' => $this->options,
+            'required' => $this->required
+        ]);
+    }
+}
+
+class CheckboxGroup extends Component {
+    public array $options = [];
+    public function __construct(public string $customId, public int $minValues=1, public ?int $maxValues=null, public bool $required=true, ?int $id=null) {
+        return parent::__construct(ComponentType::CHECKBOX_GROUP, $id);
+    }
+
+    public function addOption(string $value, string $label, ?string $description=null, bool $default=false) {
+        $this->options[] = ['value' => $value, 'label' => $label, 'description' => $description, 'default' => $default];
+    }
+
+    #[\Override]
+    public function toArray() {
+        $a = parent::toArray();
+        return array_merge($a,[
+            'custom_id' => $this->customId,
+            'options' => $this->options,
+            'min_values' => $this->minValues,
+            'max_values' => $this->maxValues,
+            'required' => $this->required
+        ]);
+    }
+}
+
+class Checkbox extends Component {
+    public array $options = [];
+    public function __construct(public string $customId, public bool $default=false, ?int $id=null) {
+        return parent::__construct(ComponentType::CHECKBOX, $id);
+    }
+
+    #[\Override]
+    public function toArray() {
+        $a = parent::toArray();
+        return array_merge($a,[
+            'custom_id' => $this->customId,
+            'default' => $this->default
+        ]);
+    }
+}
 ?>
