@@ -77,11 +77,10 @@ class ActionRow extends ComponentsContainer {
 
 class Button extends Component {
     public ?Emoji $emoji = null { get => $this->emoji; }
-    public bool $disabled = false;
 
     public function __construct(
         public ?string $label, public ?string $customId, public ButtonComponentStyle $style=ButtonComponentStyle::SECONDARY,
-        public ?string $url=null, public ?string $skuId=null, ?int $id=null
+        public ?string $url=null, public ?string $skuId=null, public bool $disabled=false, ?int $id=null
     ) {
         parent::__construct(ComponentType::BUTTON, $id);
     }
@@ -108,10 +107,9 @@ class Button extends Component {
 
 class StringSelect extends Component {
     private array $options = [];
-    public ?bool $disabled = null;
 
     public function __construct(
-        public string $customId, public ?string $placeholder=null, public ?int $minValues=1, public ?int $maxValues=1, public ?bool $required=null, ?int $id=null) {
+        public string $customId, public ?string $placeholder=null, public ?int $minValues=1, public ?int $maxValues=1, public ?bool $required=null, public bool $disabled=false, ?int $id=null) {
         parent::__construct(ComponentType::STRING_SELECT, $id);
     }
 
@@ -135,13 +133,13 @@ class StringSelect extends Component {
     public function toArray() {
         $a = parent::toArray();
         if (isset($this->required)) $a['required'] = $this->required;
-        if (isset($this->disabled)) $a['disabled'] = $this->disabled;
         return array_merge($a,[
             'custom_id' => $this->customId,
             'options' => $this->options,
             'placeholder' => $this->placeholder,
             'min_values' => $this->minValues,
-            'max_values' => $this->maxValues
+            'max_values' => $this->maxValues,
+            'disabled' => $this->disabled
         ]);
     }
 }
@@ -168,9 +166,8 @@ class TextInput extends Component {
 
 class UserSelect extends Component {
     public array $defaultValues = [];
-    public ?bool $disabled = null;
 
-    public function __construct(public string $customId, public string $placeholder='', public ?int $minValues=null, public ?int $maxValues=null, public ?bool $required=true, ?int $id=null) {
+    public function __construct(public string $customId, public string $placeholder='', public ?int $minValues=null, public ?int $maxValues=null, public ?bool $required=true, public bool $disabled=false, ?int $id=null) {
         parent::__construct(ComponentType::USER_SELECT, $id);
     }
 
@@ -188,16 +185,16 @@ class UserSelect extends Component {
         return array_merge($a,[
             'custom_id' => $this->customId,
             'placeholder' => $this->placeholder,
-            'default_values' => $this->defaultValues
+            'default_values' => $this->defaultValues,
+            'disabled' => $this->disabled
         ]);
     }
 }
 
 class RoleSelect extends Component {
     public array $defaultValues = [];
-    public ?bool $disabled = null;
 
-    public function __construct(public string $customId, public string $placeholder='', public ?int $minValues=null, public ?int $maxValues=null, public ?bool $required=true, ?int $id=null) {
+    public function __construct(public string $customId, public string $placeholder='', public ?int $minValues=null, public ?int $maxValues=null, public ?bool $required=true, public bool $disabled=false, ?int $id=null) {
         parent::__construct(ComponentType::ROLE_SELECT, $id);
     }
 
@@ -211,20 +208,19 @@ class RoleSelect extends Component {
         if (isset($this->minValues)) $a['min_values'] = $this->minValues;
         if (isset($this->maxValues)) $a['max_values'] = $this->maxValues;
         if (isset($this->required)) $a['required'] = $this->required;
-        if (isset($this->disabled)) $a['disabled'] = $this->disabled;
         return array_merge($a,[
             'custom_id' => $this->customId,
             'placeholder' => $this->placeholder,
-            'default_values' => $this->defaultValues
+            'default_values' => $this->defaultValues,
+            'disabled' => $this->disabled
         ]);
     }
 }
 
 class MentionableSelect extends Component {
     public array $defaultValues = [];
-    public ?bool $disabled = null;
 
-    public function __construct(public string $customId, public string $placeholder='', public ?int $minValues=null, public ?int $maxValues=null, public ?bool $required=true, ?int $id=null) {
+    public function __construct(public string $customId, public string $placeholder='', public ?int $minValues=null, public ?int $maxValues=null, public ?bool $required=true, public bool $disabled=false, ?int $id=null) {
         parent::__construct(ComponentType::MENTIONABLE_SELECT, $id);
     }
 
@@ -238,22 +234,21 @@ class MentionableSelect extends Component {
         if (isset($this->minValues)) $a['min_values'] = $this->minValues;
         if (isset($this->maxValues)) $a['max_values'] = $this->maxValues;
         if (isset($this->required)) $a['required'] = $this->required;
-        if (isset($this->disabled)) $a['disabled'] = $this->disabled;
         return array_merge($a,[
             'custom_id' => $this->customId,
             'placeholder' => $this->placeholder,
-            'default_values' => $this->defaultValues
+            'default_values' => $this->defaultValues,
+            'disabled' => $this->disabled
         ]);
     }
 }
 
 class ChannelSelect extends Component {
     public array $defaultValues = [];
-    public ?bool $disabled = null;
 
     public function __construct(
-        public string $customId, public ?array $channelTypes=null, public string $placeholder='',
-        public ?int $minValues=null, public ?int $maxValues=null, public ?bool $required=true, ?int $id=null
+        public string $customId, public ?array $channelTypes=null, public string $placeholder='', public ?int $minValues=null, public ?int $maxValues=null,
+        public ?bool $required=true, public bool $disabled=false, ?int $id=null
     ) {
         parent::__construct(ComponentType::CHANNEL_SELECT, $id);
     }
@@ -268,12 +263,12 @@ class ChannelSelect extends Component {
         if (isset($this->minValues)) $a['min_values'] = $this->minValues;
         if (isset($this->maxValues)) $a['max_values'] = $this->maxValues;
         if (isset($this->required)) $a['required'] = $this->required;
-        if (isset($this->disabled)) $a['disabled'] = $this->disabled;
         return array_merge($a,[
             'custom_id' => $this->customId,
             'channel_types' => $this->channelTypes,
             'placeholder' => $this->placeholder,
-            'default_values' => $this->defaultValues
+            'default_values' => $this->defaultValues,
+            'disabled' => $this->disabled
         ]);
     }
 }
