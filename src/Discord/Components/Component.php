@@ -155,7 +155,7 @@ class TextInput extends Component {
         if (isset($this->minLength)) $a['min_length'] = $this->minLength;
         if (isset($this->maxLength)) $a['max_length'] = $this->maxLength;
         if (!empty($this->value)) $a['value'] = $this->value;
-        if (!empty($this->value)) $a['placeholder'] = $this->placeholder;
+        if (!empty($this->placeholder)) $a['placeholder'] = $this->placeholder;
         return array_merge($a,[
             'custom_id' => $this->customId,
             'style' => $this->style->value,

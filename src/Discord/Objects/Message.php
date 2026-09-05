@@ -1,8 +1,4 @@
 <?php
-
-use LDLib\Discord\Components\Component;
-use LDLib\Discord\MessageFlags;
-
 /*****************************************************************************
  * This file is part of LDLib and subject to the Version 2.0 of the          *
  * Apache License, you may not use this file except in compliance            *
@@ -19,6 +15,9 @@ use LDLib\Discord\MessageFlags;
  *                Author: Lans.D <lans.d.99@protonmail.com>                  *
  *                                                                           *
  *****************************************************************************/
+namespace LDLib\Discord\Objects;
+
+use LDLib\Discord\Components\Component;
 
 class CreateMessage {
     public array $components=[];
