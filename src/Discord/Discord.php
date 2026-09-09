@@ -261,6 +261,8 @@ class Discord {
     public \Closure $onThreadCreate;
     public \Closure $onMessageCreate;
     public \Closure $onMessageUpdate;
+    public \Closure $onMessageReactionAdd;
+    public \Closure $onMessageReactionRemove;
     public \Closure $onInteractionCreate;
     public \Closure $onGuildMemberAdd;
     public \Closure $onGuildMemberRemove;
@@ -281,6 +283,8 @@ class Discord {
         $this->onThreadCreate = fn($o) => null;
         $this->onMessageCreate = fn($o) => null;
         $this->onMessageUpdate = fn($o) => null;
+        $this->onMessageReactionAdd = fn($o) => null;
+        $this->onMessageReactionRemove = fn($o) => null;
         $this->onInteractionCreate = fn($o) => null;
         $this->onGuildMemberAdd = fn($o) => null;
         $this->onGuildMemberRemove = fn($o) => null;
@@ -370,6 +374,8 @@ class Discord {
                         case 'RESUMED': $connectFinalizationMaxTime = null; break;
                         case 'MESSAGE_CREATE': go(function() use ($frame) { $this->onMessageCreate->call($this,$frame); }); break;
                         case 'MESSAGE_UPDATE': go(function() use ($frame) { $this->onMessageUpdate->call($this,$frame); }); break;
+                        case 'MESSAGE_REACTION_ADD': go(function() use ($frame) { $this->onMessageReactionAdd->call($this,$frame); }); break;
+                        case 'MESSAGE_REACTION_REMOVE': go(function() use ($frame) { $this->onMessageReactionRemove->call($this,$frame); }); break;
                         case 'INTERACTION_CREATE': go(function() use ($frame) { $this->onInteractionCreate->call($this,$frame); }); break;
                         case 'GUILD_MEMBER_ADD': go(function() use ($frame) { $this->onGuildMemberAdd->call($this,$frame); }); break;
                         case 'GUILD_MEMBER_REMOVE': go(function() use ($frame) { $this->onGuildMemberRemove->call($this,$frame); }); break;
@@ -557,6 +563,15 @@ class Discord {
         return $res;
     }
 
+    public function api_getChannelMessage(string $channelId, string $messageId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/channels/{$channelId}/messages/$messageId",[
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_getChannelMessage : unexpected http code {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
     public function api_createMessage(string $channelId, array $data, int $retryXTimes=1) {
         do $res = curl_quickRequest("{$this->apiUrl}/channels/{$channelId}/messages",[
             CURLOPT_CUSTOMREQUEST => 'POST',
@@ -565,6 +580,37 @@ class Discord {
             CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
         ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
         if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_createMessage : unexpected http code {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
+    public function api_editMessage(string $channelId, string $messageId, array $data, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/channels/{$channelId}/messages/$messageId",[
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
+            CURLOPT_POSTFIELDS => json_encode($data, JSON_THROW_ON_ERROR)
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_editMessage : unexpected http code {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
+    public function api_deleteMessage(string $channelId, string $messageId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/channels/{$channelId}/messages/$messageId",[
+            CURLOPT_CUSTOMREQUEST => 'DELETE',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"],
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_deleteMessage : unexpected http code {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
+
+    public function api_getGuildEmoji(string $serverId, string $emojiId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/{$serverId}/emojis/$emojiId",[
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_getGuildEmoji : unexpected http code {$res['httpCode']}: {$res['res']}");
         return $res;
     }
 
