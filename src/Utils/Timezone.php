@@ -328,8 +328,9 @@ class Timezone {
         $timezone = preg_replace('/\s+/',' ',trim($timezone));
 
         $timezoneAliases = self::getAliasesArray();
-        if ($tryResolveAliases && isset($timezoneAliases[strtolower($timezone)])) return new DateTimeZone($timezoneAliases[$timezone]);
+        if ($tryResolveAliases && isset($timezoneAliases[strtolower($timezone)])) return new DateTimeZone($timezoneAliases[strtolower($timezone)]);
 
+        $timezone = preg_replace('/\s+/','_',$timezone);
         if (preg_match('/^\w+\/\w+$/i',$timezone)) try { return new DateTimeZone($timezone); } catch (\Exception) { return null; }
         return null;
     }
@@ -338,8 +339,9 @@ class Timezone {
         $timezone = preg_replace('/\s+/',' ',trim($timezone));
 
         $timezoneAliases = self::getAliasesArray();
-        if ($tryResolveAliases && isset($timezoneAliases[strtolower($timezone)])) return new DateTimeZone($timezoneAliases[$timezone]);
+        if ($tryResolveAliases && isset($timezoneAliases[strtolower($timezone)])) return new DateTimeZone($timezoneAliases[strtolower($timezone)]);
 
+        $timezone = preg_replace('/\s+/','_',$timezone);
         try { return new DateTimeZone($timezone); } catch (\Exception) { return null; }
     }
 }
