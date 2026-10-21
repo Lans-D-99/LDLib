@@ -140,6 +140,7 @@ enum ComponentType:Int {
     case SEPARATOR = 14;
     case CONTAINER = 17;
     case LABEL = 18;
+    case FILE_UPLOAD = 19;
     case RADIO_GROUP = 21;
     case CHECKBOX_GROUP = 22;
     case CHECKBOX = 23;

@@ -402,6 +402,24 @@ class Label extends Component {
     }
 }
 
+class FileUpload extends Component {
+    public function __construct(public string $customId, public ?int $minValues=1, public ?int $maxValues=1, public bool $required=true, public ?array $fileTypes=null, ?int $id=null) {
+        parent::__construct(ComponentType::FILE_UPLOAD, $id);
+    }
+
+    #[\Override]
+    public function toArray() {
+        $a = parent::toArray();
+        return array_merge($a,[
+            'custom_id' => $this->customId,
+            'min_values' => $this->minValues,
+            'max_values' => $this->maxValues,
+            'required' => $this->required,
+            'file_types' => $this->fileTypes
+        ]);
+    }
+}
+
 class RadioGroup extends Component {
     public array $options = [];
     public function __construct(public string $customId, public bool $required=true, ?int $id=null) {
