@@ -324,8 +324,8 @@ class MediaGallery extends Component {
         parent::__construct(ComponentType::MEDIA_GALLERY, $id);
     }
 
-    public function addMediaItem(string $url, ?string $description, ?bool $spoiler=false) {
-        $items[] = [
+    public function addMediaItem(string $url, ?string $description=null, ?bool $spoiler=false) {
+        $this->items[] = [
             'media' => [ 'url' => $url ],
             'description' => $description,
             'spoiler' => $spoiler
