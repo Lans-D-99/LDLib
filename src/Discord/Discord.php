@@ -265,6 +265,7 @@ class Discord {
     public \Closure $onMessageReactionAdd;
     public \Closure $onMessageReactionRemove;
     public \Closure $onInteractionCreate;
+    public \Closure $onVoiceStateUpdate;
     public \Closure $onGuildMemberAdd;
     public \Closure $onGuildMemberRemove;
     public \Closure $onGuildMemberUpdate;
@@ -287,6 +288,7 @@ class Discord {
         $this->onMessageReactionAdd = fn($o) => null;
         $this->onMessageReactionRemove = fn($o) => null;
         $this->onInteractionCreate = fn($o) => null;
+        $this->onVoiceStateUpdate = fn($o) => null;
         $this->onGuildMemberAdd = fn($o) => null;
         $this->onGuildMemberRemove = fn($o) => null;
         $this->onGuildMemberUpdate = fn($o) => null;
@@ -382,6 +384,7 @@ class Discord {
                         case 'GUILD_MEMBER_REMOVE': go(function() use ($frame) { $this->onGuildMemberRemove->call($this,$frame); }); break;
                         case 'GUILD_MEMBER_UPDATE': go(function() use ($frame) { $this->onGuildMemberUpdate->call($this,$frame); }); break;
                         case 'THREAD_CREATE': go(function() use ($frame) { $this->onThreadCreate->call($this,$frame); }); break;
+                        case 'VOICE_STATE_UPDATE': go(function() use ($frame) { $this->onVoiceStateUpdate->call($this,$frame); }); break;
                         case 'GUILD_CREATE': case 'GUILD_UPDATE': case 'GUILD_DELETE': case 'GUILD_ROLE_CREATE':
                         case 'GUILD_ROLE_UPDATE': case 'GUILD_ROLE_DELETE': case 'CHANNEL_CREATE': case 'CHANNEL_UPDATE':
                         case 'CHANNEL_DELETE': case 'CHANNEL_PINS_UPDATE': case 'THREAD_UPDATE':
