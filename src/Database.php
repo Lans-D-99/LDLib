@@ -19,6 +19,7 @@ namespace LDLib\Database;
 
 use LDLib\Context\Context;
 use LDLib\Logger\Logger;
+use LDLib\Logger\LogLevel;
 use LDLib\PageInfo;
 use LDLib\PaginationVals;
 use LDLib\Server\WorkerContext;
@@ -34,20 +35,32 @@ class LDPDO {
     public array $locks = [];
     public int $nSkipTransactionCommands = 0;
 
+    public bool $inTransaction = false;
+
     public function __construct(public ?Context $context=null) {
         $this->instanceId = bin2hex(random_bytes(8));
         $this->pdo = PDO::getConnection();
     }
 
     public function query(string $query, ?int $fetchMode = null, ?int $cost=null):\PDOStatement|false {
-        if ($this->nSkipTransactionCommands > 0 && self::isTransactionCommand($query)) return false;
+        $isTransactionCommand = self::isTransactionCommand($query);
+        if ($this->nSkipTransactionCommands > 0 && $isTransactionCommand) return false;
         if ($this->context != null) $this->context->dbcost += $cost ?? 1;
+        if ($isTransactionCommand) {
+            if ($query === 'START TRANSACTION') $this->inTransaction = true;
+            else if ($query === 'COMMIT' || $query === 'ROLLBACK') $this->inTransaction = false;
+        }
         return $this->pdo->query($query,$fetchMode);
     }
 
     public function prepare(string $query, array $options=[], ?int $cost=null):\PDOStatement|false {
-        if ($this->nSkipTransactionCommands > 0 && self::isTransactionCommand($query)) return false;
+        $isTransactionCommand = self::isTransactionCommand($query);
+        if ($this->nSkipTransactionCommands > 0 && $isTransactionCommand) return false;
         if ($this->context != null) $this->context->dbcost += $cost ?? 1;
+        if ($isTransactionCommand) {
+            if ($query === 'START TRANSACTION') $this->inTransaction = true;
+            else if ($query === 'COMMIT' || $query === 'ROLLBACK') $this->inTransaction = false;
+        }
         return $this->pdo->prepare($query,$options);
     }
 
@@ -64,7 +77,18 @@ class LDPDO {
     }
 
     public function toPool(bool $rollback=false) {
+        if (count($this->locks) > 0) {
+            Logger::log(LogLevel::WARN, "DATABASE LOCK", "Database lock(s) not explicitly released. (".implode(',',$this->locks).')');
+            $this->releaseAllLocks();
+        }
+
+        if ($this->inTransaction != null && !$rollback) {
+            Logger::log(LogLevel::ERROR, "TRANSACTION LEFT OPEN", 'Transaction not explicitly closed.');
+            throw new \Exception('Transaction not explicitly closed.');
+        }
+
         if ($rollback) $this->query('ROLLBACK');
+
         $this->nSkipTransactionCommands = 0;
         if ($this->context != null) $this->context->pdoConnsTraces->remove($this->instanceId,'');
         WorkerContext::$pdoConnectionPool->put($this);
@@ -76,7 +100,7 @@ class LDPDO {
     }
 
     public function releaseAllLocks() {
-        foreach ($this->locks as $lock) $this->query("SELECT RELEASE_LOCK('$lock')");
+        foreach ($this->locks as $lock) $this->releaseLock($lock);
     }
 
     public function skipTransactionCommands() {
@@ -87,7 +111,7 @@ class LDPDO {
         return $this->nSkipTransactionCommands > 0 ? --$this->nSkipTransactionCommands : $this->nSkipTransactionCommands;
     }
 
-    public function assureConnectionIsAlive() {
+    public function ensureConnectionIsAlive() {
         try {
             $this->query('SELECT 1');
         } catch (PDOException $e) {
