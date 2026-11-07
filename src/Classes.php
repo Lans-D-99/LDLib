@@ -140,16 +140,33 @@ class TypedException extends \Exception implements \GraphQL\Error\ClientAware {
 }
 
 class OperationResult {
-    public string $resultMsg = '';
+    public ?string $errorLine = null;
 
-    public function __construct(public SuccessType|ErrorType $resultType, ?string $resultMsg = null, public array $fieldsData = [], public array $data = []) {
-        if ($resultMsg != null) $this->resultMsg = $resultMsg;
+    public function __construct(public SuccessType|ErrorType $resultType, public mixed $data=null, public string $resultMsg='', public array $fieldsData=[]) {
+        $this->data = $data;
+
+        if ($_SERVER['LD_DEBUG'] === '1' && $_SERVER['LD_GRAPHQL_MORE_LOGS'] === '1') {
+            $s = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,2);
+            $this->errorLine = "{$s[0]['file']}:{$s[0]['line']}";
+        }
         else switch ($resultType) {
             case ErrorType::INVALID_DATA: $this->resultMsg = 'Invalid data.'; break;
             case ErrorType::NOT_AUTHENTICATED: $this->resultMsg = 'User not authenticated.'; break;
             case ErrorType::NOT_ENOUGH_PRIVILEGES: $this->resultMsg = 'User not authorized.'; break;
             default: $this->resultMsg = $resultType instanceof ErrorType ? 'Something went wrong.' : 'No problem detected.'; break;
         }
+    }
+
+
+    public function isSuccess() { return $this->resultType instanceof SuccessType; }
+    public function isError() { return $this->resultType instanceof ErrorType; }
+    public function unwrap() { return $this->data; }
+
+    public static function success(mixed $data=null, string $msg='', array $fieldsData=[], SuccessType $type=SuccessType::SUCCESS):self {
+        return new OperationResult($type,$data,$msg,$fieldsData);
+    }
+    public static function error(ErrorType $type, string $msg='', mixed $data=null, array $fieldsData=[]):self {
+        return new OperationResult($type,$data,$msg,$fieldsData);
     }
 }
 
