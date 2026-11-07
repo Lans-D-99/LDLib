@@ -18,16 +18,20 @@
 namespace LDLib\Discord\Objects;
 
 class Embed {
-    public ?int $flags = 0;
-    public ?string $timestamp = null;
-    public ?string $url = null;
-    public ?array $footer = null;
-    public ?array $image = null;
-    public ?array $thumbnail = null;
-    public ?array $video = null;
-    public ?array $provider = null;
-    public ?array $author = null;
-    public ?array $fields = null;
+    public ?string $url=null;
+    public ?string $timestamp=null;
+
+    public ?array $footer=null;
+    public ?array $image=null;
+    public ?array $thumbnail=null;
+    public ?array $video=null;
+    public ?array $provider=null;
+    public ?array $author=null;
+
+    public ?array $fields=null;
+    public ?array $components=null;
+
+    public ?int $flags=null;
 
     public function __construct(public ?string $title=null, public ?string $description=null, public ?int $color=null, public string $type="rich") { }
 
@@ -48,6 +52,31 @@ class Embed {
             'author' => $this->author,
             'fields' => $this->fields
         ];
+    }
+
+    public static function fromArray(array $data): self {
+        $embed = new self();
+
+        $embed->title = $data['title']??null;
+        $embed->type = $data['type']??null;
+        $embed->description = $data['description']??null;
+        $embed->url = $data['url']??null;
+        $embed->timestamp = $data['timestamp']??null;
+        $embed->color = $data['color']??null;
+
+        $embed->footer = $data['footer']??null;
+        $embed->image = $data['image']??null;
+        $embed->thumbnail = $data['thumbnail']??null;
+        $embed->video = $data['video']??null;
+        $embed->provider = $data['provider']??null;
+        $embed->author = $data['author']??null;
+
+        $embed->fields = $data['fields']??null;
+        $embed->components = $data['components']??null;
+
+        $embed->flags = $data['flags']??null;
+
+        return $embed;
     }
 }
 ?>

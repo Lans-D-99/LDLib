@@ -18,25 +18,45 @@
 namespace LDLib\Discord\Objects;
 
 class Emoji {
-    public ?array $roles = null;
+    public ?string $id = null;
+    public ?string $name = null;
+
+    /** @var string[] */
+    public array $roles = [];
+
+    public ?User $user = null;
     public ?bool $requireColons = null;
     public ?bool $managed = null;
     public ?bool $animated = null;
     public ?bool $available = null;
 
-    public function __construct(public ?string $id, public ?string $name) { }
+    public static function fromArray(array $data): self {
+        $emoji = new self();
+
+        $emoji->id = isset($data['id']) ? $data['id'] : null;
+        $emoji->name = $data['name']??null;
+        $emoji->roles = $data['roles']??[];
+
+        $emoji->user = isset($data['user']) ? User::fromArray($data['user']) : null;
+
+        $emoji->requireColons = $data['require_colons']??null;
+        $emoji->managed = $data['managed']??null;
+        $emoji->animated = $data['animated']??null;
+        $emoji->available = $data['available']??null;
+
+        return $emoji;
+    }
 
     public function toArray():array {
-        $a = [
+        return [
             'id' => $this->id,
-            'name' => $this->name
+            'name' => $this->name,
+            'roles' => $this->roles,
+            'require_colons' => $this->requireColons,
+            'managed' => $this->managed,
+            'animated' => $this->animated,
+            'available' => $this->available
         ];
-        if (isset($this->roles)) $a['roles'] = $this->roles;
-        if (isset($this->requireColons)) $a['require_colons'] = $this->requireColons;
-        if (isset($this->managed)) $a['managed'] = $this->managed;
-        if (isset($this->animated)) $a['animated'] = $this->animated;
-        if (isset($this->available)) $a['available'] = $this->available;
-        return $a;
     }
 }
 ?>

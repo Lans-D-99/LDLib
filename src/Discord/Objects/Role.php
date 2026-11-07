@@ -15,21 +15,41 @@
  *                Author: Lans.D <lans.d.99@protonmail.com>                  *
  *                                                                           *
  *****************************************************************************/
-namespace LDLib\Discord;
+namespace LDLib\Discord\Objects;
 
-class User {
-    public ?array $raw = null;
+class Role {
+    public string $id;
+    public string $name;
+    public int $color;
+    public array $colors;
+    public bool $hoist;
+    public ?string $icon = null;
+    public ?string $unicodeEmoji = null;
+    public int $position;
+    public string $permissions;
+    public bool $managed;
+    public bool $mentionable;
+    public ?array $tags = null;
+    public int $flags;
 
-    public function __construct(
-        public string $id,
-        public string $username,
-        public ?string $globalName
-    ) { }
+    public static function fromArray(array $data):self {
+        $role = new self();
 
-    public static function initFromArray(array $data) {
-        $o = new self(@$data['id'],@$data['username'],@$data['globalName']);
-        $o->raw = $data;
-        return $o;
+        $role->id = (string) $data['id'];
+        $role->name = $data['name'];
+        $role->color = $data['color'];
+        $role->colors = $data['colors'];
+        $role->hoist = $data['hoist'];
+        $role->icon = $data['icon'] ?? null;
+        $role->unicodeEmoji = $data['unicode_emoji'] ?? null;
+        $role->position = $data['position'];
+        $role->permissions = (string) $data['permissions'];
+        $role->managed = $data['managed'];
+        $role->mentionable = $data['mentionable'];
+        $role->tags = $data['tags'] ?? null;
+        $role->flags = $data['flags'];
+
+        return $role;
     }
 }
 ?>

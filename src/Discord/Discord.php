@@ -19,10 +19,32 @@ namespace LDLib\Discord;
 
 use LDLib\Cache\LDValkey;
 use LDLib\Client\WSClient;
+use LDLib\ConnectionPool;
 use LDLib\Database\LDPDO;
+use LDLib\Discord\Context\AutocompleteResponseContext;
+use LDLib\Discord\Context\GuildMemberAddContext;
+use LDLib\Discord\Context\GuildMemberRemoveContext;
+use LDLib\Discord\Context\GuildMemberUpdateContext;
+use LDLib\Discord\Context\MessageCreateContext;
+use LDLib\Discord\Context\MessageUpdateContext;
+use LDLib\Discord\Context\ModalResponseContext;
+use LDLib\Discord\Context\MsgComponentResponseContext;
+use LDLib\Discord\Context\SlashCommandContext;
+use LDLib\Discord\Context\ThreadCreateContext;
+use LDLib\Discord\Context\VoiceStateUpdateContext;
+use LDLib\Discord\Functionality\Functionalities;
+use LDLib\Discord\Functionality\GuildSlashCommand;
+use LDLib\Discord\Objects\ApplicationCommandInteractionData;
+use LDLib\Discord\Objects\Interaction;
+use LDLib\Discord\Objects\InteractionContextType;
+use LDLib\Discord\Objects\MessageComponentInteractionData;
+use LDLib\Discord\Objects\MessageReactionAdd;
+use LDLib\Discord\Objects\MessageReactionRemove;
+use LDLib\Discord\Objects\ModalSubmitInteractionData;
 use LDLib\Logger\Logger;
 use LDLib\Logger\LogLevel;
 use Swoole\Coroutine;
+use Swoole\WebSocket\Frame;
 
 use function LDLib\Net\curl_quickRequest;
 use function Swoole\Coroutine\go;
@@ -259,6 +281,9 @@ class Discord {
 
     public array $queued = [];
 
+    public ConnectionPool $pdoConnectionPool;
+    public ConnectionPool $valkeyConnectionPool;
+
     public \Closure $onThreadCreate;
     public \Closure $onMessageCreate;
     public \Closure $onMessageUpdate;
@@ -270,28 +295,39 @@ class Discord {
     public \Closure $onGuildMemberRemove;
     public \Closure $onGuildMemberUpdate;
 
+    public Functionalities $functionalities;
+    public bool $automaticallyProcessEvents = true;
+
     public function __construct(
         public string $botToken,
         public LDValkey $valkey,
         public int $intents=0,
         public string $apiUrl="https://discord.com/api/v10",
-        public string $connectUrlPath ="/?v=10&encoding=json"
+        public string $connectUrlPath ="/?v=10&encoding=json",
+        public array $pdoPoolCapacities=[10,30,50],
+        public array $valkeyPoolCapacities=[10,30,50]
     ) {
         $this->botId = $_SERVER['BOT_ID'];
         $this->wssURL = $this->connectURL = $valkey->get('wssURL');
         $this->resumeGatewayURL = $valkey->get('resumeGatewayURL');
         $this->sessionID = $valkey->get('sessionID');
         $this->lastSequenceNumber = $valkey->get('lastSequenceNumber');
-        $this->onThreadCreate = fn($o) => null;
-        $this->onMessageCreate = fn($o) => null;
-        $this->onMessageUpdate = fn($o) => null;
-        $this->onMessageReactionAdd = fn($o) => null;
-        $this->onMessageReactionRemove = fn($o) => null;
-        $this->onInteractionCreate = fn($o) => null;
-        $this->onVoiceStateUpdate = fn($o) => null;
-        $this->onGuildMemberAdd = fn($o) => null;
-        $this->onGuildMemberRemove = fn($o) => null;
-        $this->onGuildMemberUpdate = fn($o) => null;
+        $f = function(Frame $frame, string $eventName) {
+            if (!$this->automaticallyProcessEvents) return;
+            $this->processGatewayEvent($frame,$eventName);
+        };
+        $this->onThreadCreate = $f;
+        $this->onMessageCreate = $f;
+        $this->onMessageUpdate = $f;
+        $this->onMessageReactionAdd = $f;
+        $this->onMessageReactionRemove = $f;
+        $this->onInteractionCreate = $f;
+        $this->onVoiceStateUpdate = $f;
+        $this->onGuildMemberAdd = $f;
+        $this->onGuildMemberRemove = $f;
+        $this->onGuildMemberUpdate = $f;
+
+        $this->functionalities = new Functionalities();
 
         if ($this->wssURL == null) {
             $v = curl_quickRequest("$apiUrl/gateway/bot",[
@@ -307,9 +343,14 @@ class Discord {
         if (isset($this->resumeGatewayURL)) {
             $this->connectURL = $this->resumeGatewayURL;
         }
+
+        $this->pdoConnectionPool = new ConnectionPool(fn() => new LDPDO(),$this->pdoPoolCapacities,null,'PDOPool');
+        $this->valkeyConnectionPool = new ConnectionPool(fn() => new LDValkey(),$this->valkeyPoolCapacities,null,'ValkeyPool');
     }
 
-    public function updateCommands(array $commands):bool {
+    public function updateCommands():bool {
+        $commands = $this->functionalities->getCommandsArray();
+
         $res = $this->api_getCurrentUserGuilds();
         if ($res['httpCode'] !== 200) {
             Logger::log(LogLevel::ERROR, 'DISCORD', "Couldn't overwrite commands: {$res['res']}");
@@ -375,16 +416,16 @@ class Discord {
                     switch ($t) {
                         case 'READY': $connectFinalizationMaxTime = null; break;
                         case 'RESUMED': $connectFinalizationMaxTime = null; break;
-                        case 'MESSAGE_CREATE': go(function() use ($frame) { $this->onMessageCreate->call($this,$frame); }); break;
-                        case 'MESSAGE_UPDATE': go(function() use ($frame) { $this->onMessageUpdate->call($this,$frame); }); break;
-                        case 'MESSAGE_REACTION_ADD': go(function() use ($frame) { $this->onMessageReactionAdd->call($this,$frame); }); break;
-                        case 'MESSAGE_REACTION_REMOVE': go(function() use ($frame) { $this->onMessageReactionRemove->call($this,$frame); }); break;
-                        case 'INTERACTION_CREATE': go(function() use ($frame) { $this->onInteractionCreate->call($this,$frame); }); break;
-                        case 'GUILD_MEMBER_ADD': go(function() use ($frame) { $this->onGuildMemberAdd->call($this,$frame); }); break;
-                        case 'GUILD_MEMBER_REMOVE': go(function() use ($frame) { $this->onGuildMemberRemove->call($this,$frame); }); break;
-                        case 'GUILD_MEMBER_UPDATE': go(function() use ($frame) { $this->onGuildMemberUpdate->call($this,$frame); }); break;
-                        case 'THREAD_CREATE': go(function() use ($frame) { $this->onThreadCreate->call($this,$frame); }); break;
-                        case 'VOICE_STATE_UPDATE': go(function() use ($frame) { $this->onVoiceStateUpdate->call($this,$frame); }); break;
+                        case 'MESSAGE_CREATE': go(function() use ($frame,$t) { $this->onMessageCreate->call($this,$frame,$t); }); break;
+                        case 'MESSAGE_UPDATE': go(function() use ($frame,$t) { $this->onMessageUpdate->call($this,$frame,$t); }); break;
+                        case 'MESSAGE_REACTION_ADD': go(function() use ($frame,$t) { $this->onMessageReactionAdd->call($this,$frame,$t); }); break;
+                        case 'MESSAGE_REACTION_REMOVE': go(function() use ($frame,$t) { $this->onMessageReactionRemove->call($this,$frame,$t); }); break;
+                        case 'INTERACTION_CREATE': go(function() use ($frame,$t) { $this->onInteractionCreate->call($this,$frame,$t); }); break;
+                        case 'GUILD_MEMBER_ADD': go(function() use ($frame,$t) { $this->onGuildMemberAdd->call($this,$frame,$t); }); break;
+                        case 'GUILD_MEMBER_REMOVE': go(function() use ($frame,$t) { $this->onGuildMemberRemove->call($this,$frame,$t); }); break;
+                        case 'GUILD_MEMBER_UPDATE': go(function() use ($frame,$t) { $this->onGuildMemberUpdate->call($this,$frame,$t); }); break;
+                        case 'THREAD_CREATE': go(function() use ($frame,$t) { $this->onThreadCreate->call($this,$frame,$t); }); break;
+                        case 'VOICE_STATE_UPDATE': go(function() use ($frame,$t) { $this->onVoiceStateUpdate->call($this,$frame,$t); }); break;
                         case 'GUILD_CREATE': case 'GUILD_UPDATE': case 'GUILD_DELETE': case 'GUILD_ROLE_CREATE':
                         case 'GUILD_ROLE_UPDATE': case 'GUILD_ROLE_DELETE': case 'CHANNEL_CREATE': case 'CHANNEL_UPDATE':
                         case 'CHANNEL_DELETE': case 'CHANNEL_PINS_UPDATE': case 'THREAD_UPDATE':
@@ -484,6 +525,105 @@ class Discord {
 
             Coroutine::sleep(0.1);
         }
+    }
+
+    public function processGatewayEvent(Frame $frame, string $eventName) {
+        $pdo = $this->pdoConnectionPool->get();
+        $valkey = $this->valkeyConnectionPool->get();
+        switch ($eventName) {
+            case 'MESSAGE_CREATE':
+                $context = new MessageCreateContext($this,$frame,$pdo);
+                foreach ($this->functionalities->receivers_onMessageCreate as $f) {
+                    $f($context,$pdo,$valkey);
+                    if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                } break;
+            case 'MESSAGE_UPDATE':
+                $context = new MessageUpdateContext($this,$frame,$pdo);
+                foreach ($this->functionalities->receivers_onMessageUpdate as $f) {
+                    $f($context,$pdo,$valkey);
+                    if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                } break;
+            case 'MESSAGE_REACTION_ADD':
+                $context = new MessageReactionAdd($this,$frame,$pdo);
+                foreach ($this->functionalities->receivers_onMessageReactionAdd as $f) {
+                    $f($context,$pdo,$valkey);
+                    if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                } break;
+            case 'MESSAGE_REACTION_REMOVE':
+                $context = new MessageReactionRemove($this,$frame,$pdo);
+                foreach ($this->functionalities->receivers_onMessageReactionRemove as $f) {
+                    $f($context,$pdo,$valkey);
+                    if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                } break;
+            case 'INTERACTION_CREATE':
+                $interaction = json_decode($frame->data,true)['d'];
+                $i = Interaction::fromArray($interaction);
+                if ($i->context !== InteractionContextType::GUILD) break;
+                switch ($i->type) {
+                    case InteractionType::APPLICATION_COMMAND:
+                        assert($i->data instanceof ApplicationCommandInteractionData);
+                        $f = $this->functionalities->getGuildSlashCommand($i->data->name)?->getResolver($i->data->getFullName());
+                        if ($f == null) break;
+                        $f(new SlashCommandContext($this,$frame,$pdo),$i->data,$pdo,$valkey);
+                        if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                        break;
+                    case InteractionType::APPLICATION_COMMAND_AUTOCOMPLETE:
+                        assert($i->data instanceof ApplicationCommandInteractionData);
+                        $f = $this->functionalities->getAutocompleteResponse($i->data->name)->resolver;
+                        if ($f == null) break;
+                        $f(new AutocompleteResponseContext($this,$frame,$pdo),$i->data,$pdo,$valkey);
+                        if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                        break;
+                    case InteractionType::MESSAGE_COMPONENT:
+                        assert($i->data instanceof MessageComponentInteractionData);
+                        $f = $this->functionalities->getMsgComponentResponse($i->data->myCustomId)->resolver;
+                        if ($f == null) break;
+                        $f(new MsgComponentResponseContext($this,$frame,$pdo),$i->data,$pdo,$valkey);
+                        if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                        break;
+                    case InteractionType::MODAL_SUBMIT:
+                        assert($i->data instanceof ModalSubmitInteractionData);
+                        $f = $this->functionalities->getModalResponse($i->data->myCustomId)->resolver;
+                        if ($f == null) break;
+                        $f(new ModalResponseContext($this,$frame,$pdo),$i->data,$pdo,$valkey);
+                        if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                        break;
+                }
+                break;
+            case 'GUILD_MEMBER_ADD':
+                $context = new GuildMemberAddContext($this,$frame,$pdo);
+                foreach ($this->functionalities->receivers_onGuildMemberAdd as $f) {
+                    $f($context,$pdo,$valkey);
+                    if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                } break;
+            case 'GUILD_MEMBER_REMOVE':
+                $context = new GuildMemberRemoveContext($this,$frame,$pdo);
+                foreach ($this->functionalities->receivers_onGuildMemberRemove as $f) {
+                    $f($context,$pdo,$valkey);
+                    if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                } break;
+            case 'GUILD_MEMBER_UPDATE':
+                $context = new GuildMemberUpdateContext($this,$frame,$pdo);
+                foreach ($this->functionalities->receivers_onGuildMemberUpdate as $f) {
+                    $f($context,$pdo,$valkey);
+                    if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                } break;
+            case 'THREAD_CREATE':
+                $context = new ThreadCreateContext($this,$frame,$pdo);
+                foreach ($this->functionalities->receivers_onThreadCreate as $f) {
+                    $f($context,$pdo,$valkey);
+                    if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                } break;
+            case 'VOICE_STATE_UPDATE':
+                $context = new VoiceStateUpdateContext($this,$frame,$pdo);
+                foreach ($this->functionalities->receivers_onVoiceStateUpdate as $f) {
+                    $f($context,$pdo,$valkey);
+                    if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
+                } break;
+            default: break;
+        }
+        $this->pdoConnectionPool->put($pdo);
+        $this->valkeyConnectionPool->put($valkey);
     }
 
     public function registerRole(LDPDO $pdo, string $serverId, ?string $name="new role", ?string $permissions=null, array $colors=['primary_color'=>0], bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false) {
@@ -762,7 +902,7 @@ class Discord {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
             CURLOPT_POSTFIELDS => json_encode([
-                'type' => $type->value,
+                'type' => $type,
                 'data' => $data
             ], JSON_THROW_ON_ERROR)
         ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
