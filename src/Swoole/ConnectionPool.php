@@ -47,6 +47,8 @@ class ConnectionPool {
 
     public function get(?Context $context=null, float $timeout=1) {
         $conn = $this->pool->pop($timeout);
+        if ($conn instanceof \LDLib\Cache\LDValkey || $conn instanceof \LDLib\Database\LDPDO) $conn->ensureConnectionIsAlive();
+
         if ($conn === false) {
             Logger::log(LogLevel::WARN, 'ConnectionPool', "{$this->name}: Pool is empty but need connection.");
             go(fn() => $this->fillForLevel($this->capacityLevel+1));
@@ -65,6 +67,11 @@ class ConnectionPool {
             Logger::log(LogLevel::ERROR,'ConnectionPool',"{$this->name}: Failed giving back a connection to pool, nConnectionsTracked={$this->nConnectionsTracked}, poolLength={$this->pool->length()}.");
             return false;
         }
+        if ($connection instanceof \LDLib\Database\LDPDO && $connection->inTransaction) {
+            Logger::log(LogLevel::ERROR, "TRANSACTION LEFT OPEN", 'Transaction not explicitly closed.');
+            throw new \Exception('Transaction not explicitly closed.');
+        }
+
         $this->nConnectionsTracked--;
         $res = $this->pool->push($connection,$timeout);
         if (!$res) {
