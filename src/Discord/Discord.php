@@ -26,6 +26,8 @@ use LDLib\Discord\Context\GuildMemberAddContext;
 use LDLib\Discord\Context\GuildMemberRemoveContext;
 use LDLib\Discord\Context\GuildMemberUpdateContext;
 use LDLib\Discord\Context\MessageCreateContext;
+use LDLib\Discord\Context\MessageReactionAddContext;
+use LDLib\Discord\Context\MessageReactionRemoveContext;
 use LDLib\Discord\Context\MessageUpdateContext;
 use LDLib\Discord\Context\ModalResponseContext;
 use LDLib\Discord\Context\MsgComponentResponseContext;
@@ -38,8 +40,6 @@ use LDLib\Discord\Objects\ApplicationCommandInteractionData;
 use LDLib\Discord\Objects\Interaction;
 use LDLib\Discord\Objects\InteractionContextType;
 use LDLib\Discord\Objects\MessageComponentInteractionData;
-use LDLib\Discord\Objects\MessageReactionAdd;
-use LDLib\Discord\Objects\MessageReactionRemove;
 use LDLib\Discord\Objects\ModalSubmitInteractionData;
 use LDLib\Logger\Logger;
 use LDLib\Logger\LogLevel;
@@ -544,13 +544,13 @@ class Discord {
                     if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
                 } break;
             case 'MESSAGE_REACTION_ADD':
-                $context = new MessageReactionAdd($this,$frame,$pdo);
+                $context = new MessageReactionAddContext($this,$frame,$pdo);
                 foreach ($this->functionalities->receivers_onMessageReactionAdd as $f) {
                     $f($context,$pdo,$valkey);
                     if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
                 } break;
             case 'MESSAGE_REACTION_REMOVE':
-                $context = new MessageReactionRemove($this,$frame,$pdo);
+                $context = new MessageReactionRemoveContext($this,$frame,$pdo);
                 foreach ($this->functionalities->receivers_onMessageReactionRemove as $f) {
                     $f($context,$pdo,$valkey);
                     if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
