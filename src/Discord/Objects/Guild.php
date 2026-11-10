@@ -230,6 +230,8 @@ class GuildMember {
         $member->avatarDecorationData = $data['avatar_decoration_data']??null;
         $member->collectibles = $data['collectibles']??null;
 
+        $member->guildId = $data['guild_id']??null;
+
         return $member;
     }
 }
