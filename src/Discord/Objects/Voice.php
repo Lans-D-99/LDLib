@@ -36,7 +36,7 @@ class VoiceState {
         $c->guildId = $data['guild_id']??null;
         $c->channelId = $data['channel_id'];
         $c->userId = $data['user_id'];
-        $c->member = $data['member']??null;
+        $c->member = isset($data['member']) ? GuildMember::fromArray($data['member']) : null;
         $c->sessionId = $data['session_id'];
         $c->deaf = $data['deaf'];
         $c->mute = $data['mute'];
