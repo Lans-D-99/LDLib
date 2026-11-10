@@ -144,7 +144,10 @@ class InteractionContext extends Context {
             $this->customId = $pos === false ? $this->o->data->customId : substr($this->o->data->customId,0,$pos);
             $this->args = $pos === false ? [] : explode(',',substr($this->o->data->customId,$pos+1));
         }
-        if (isset($pdo)) $this->user = RegisteredDiscordUser::initFromDiscordId($pdo,$this->o->user?->id??$this->o->member?->user->id);
+        if (isset($pdo)) {
+            $this->user = RegisteredDiscordUser::initFromDiscordId($pdo,$this->o->user?->id??$this->o->member?->user->id);
+            $this->user->c_discordRoles[$this->o->guildId] = $this->o->member?->roles??[];
+        }
     }
 
     public function respondToInteraction(array $data, InteractionCallbackType $cbType=InteractionCallbackType::CHANNEL_MESSAGE_WITH_SOURCE) {
