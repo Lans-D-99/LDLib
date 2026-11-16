@@ -308,5 +308,13 @@ class Utils {
     public static function getTempFilePath(string $name='file') {
         return ServerContext::$tempPath.'/'.self::getUniqueFileName($name);
     }
+
+    public static function makeDataURI(string $data='', ?string $mediaType=null, bool $isBase64=true) {
+        $s = 'data:';
+        if (!empty($mediaType)) $s .= $mediaType;
+        if ($isBase64) $s .= ";base64";
+        $s .= ",$data";
+        return $s;
+    }
 }
 ?>
