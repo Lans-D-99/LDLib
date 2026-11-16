@@ -146,7 +146,7 @@ class InteractionContext extends Context {
         }
         if (isset($pdo)) {
             $this->user = RegisteredDiscordUser::initFromDiscordId($pdo,$this->o->user?->id??$this->o->member?->user->id);
-            $this->user->c_discordRoles[$this->o->guildId] = $this->o->member?->roles??[];
+            if ($this->user != null) $this->user->c_discordRoles[$this->o->guildId] = $this->o->member?->roles??[];
         }
     }
 

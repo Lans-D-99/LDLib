@@ -569,21 +569,21 @@ class Discord {
                         break;
                     case InteractionType::APPLICATION_COMMAND_AUTOCOMPLETE:
                         assert($i->data instanceof ApplicationCommandInteractionData);
-                        $f = $this->functionalities->getAutocompleteResponse($i->data->name)->resolver;
+                        $f = $this->functionalities->getAutocompleteResponse($i->data->name)?->resolver;
                         if ($f == null) break;
                         $f(new AutocompleteResponseContext($this,$frame,$pdo),$i->data,$pdo,$valkey);
                         if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
                         break;
                     case InteractionType::MESSAGE_COMPONENT:
                         assert($i->data instanceof MessageComponentInteractionData);
-                        $f = $this->functionalities->getMsgComponentResponse($i->data->myCustomId)->resolver;
+                        $f = $this->functionalities->getMsgComponentResponse($i->data->myCustomId)?->resolver;
                         if ($f == null) break;
                         $f(new MsgComponentResponseContext($this,$frame,$pdo),$i->data,$pdo,$valkey);
                         if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
                         break;
                     case InteractionType::MODAL_SUBMIT:
                         assert($i->data instanceof ModalSubmitInteractionData);
-                        $f = $this->functionalities->getModalResponse($i->data->myCustomId)->resolver;
+                        $f = $this->functionalities->getModalResponse($i->data->myCustomId)?->resolver;
                         if ($f == null) break;
                         $f(new ModalResponseContext($this,$frame,$pdo),$i->data,$pdo,$valkey);
                         if ($pdo->inTransaction) { throw new \Exception("Transaction not closed."); }
