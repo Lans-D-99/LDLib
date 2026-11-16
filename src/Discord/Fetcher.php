@@ -27,10 +27,10 @@ class CommandContext {
     public string $id;
     public array $data = [];
 
-    public function __construct() { }
+    public function __construct(public string $name='') { }
 
     public static function new(string $name) {
-        $o = new self();
+        $o = new self($name);
         $t = microtime(true);
         $x = bin2hex(random_bytes(4));
         $o->id = "{$name}*{$t}*{$x}";
@@ -71,6 +71,7 @@ class CommandContext {
         $o->id = $id;
         $v = $valkey->get($id);
         $o->data = $v == null ? [] : json_decode($v,true);
+        $o->name = explode('*',$o->id,2)[0];
         return $o;
     }
 }
