@@ -626,7 +626,7 @@ class Discord {
         $this->valkeyConnectionPool->put($valkey);
     }
 
-    public function registerRole(LDPDO $pdo, string $serverId, ?string $name="new role", ?string $permissions=null, array $colors=['primary_color'=>0], bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false) {
+    public function registerRole(LDPDO $pdo, string $serverId, ?string $name="new role", string $permissions='0', array $colors=['primary_color'=>0], bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false) {
         $stmt = $pdo->prepare('SELECT * FROM server_roles WHERE server_id=? AND name=?');
         $stmt->execute([$serverId,$name]);
         $row = $stmt->fetch();
