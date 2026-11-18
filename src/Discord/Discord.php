@@ -651,6 +651,12 @@ class Discord {
         return $row;
     }
 
+    public function getRegisteredRole(LDPDO $pdo, string $serverId, string $name) {
+        $stmt = $pdo->prepare('SELECT * FROM server_roles WHERE server_id=? AND name=? LIMIT 1');
+        $stmt->execute([$serverId,$name]);
+        return $stmt->fetch();
+    }
+
     private function identify(?int $intents=null) {
         $intents ??= $this->intents;
         $this->lastSequenceNumber = null;
