@@ -749,6 +749,15 @@ class Discord {
     }
 
 
+    public function api_getGuild(string $serverId, int $retryXTimes=1) {
+        do $res = curl_quickRequest("{$this->apiUrl}/guilds/{$serverId}",[
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ["Authorization: Bot {$this->botToken}"]
+        ],10); while (@$res['httpCode'] === 429 && $retryXTimes-- > 0 && @usleep(floatval(json_decode($res['res'],true)['retry_after'])*10000000) == null);
+        if ($res['httpCode'] !== 200) Logger::log(LogLevel::ERROR, 'DISCORD', "api_getGuild : unexpected http code {$res['httpCode']}: {$res['res']}");
+        return $res;
+    }
+
     public function api_getGuildEmoji(string $serverId, string $emojiId, int $retryXTimes=1) {
         do $res = curl_quickRequest("{$this->apiUrl}/guilds/{$serverId}/emojis/$emojiId",[
             CURLOPT_RETURNTRANSFER => true,
