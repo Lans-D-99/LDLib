@@ -828,7 +828,7 @@ class Discord {
         return $res;
     }
 
-    public function api_createGuildRole(string $serverId, ?string $name="new role", ?string $permissions=null, array $colors=['primary_color'=>0], bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false, int $retryXTimes=1) {
+    public function api_createGuildRole(string $serverId, ?string $name="new role", string $permissions='0', array $colors=['primary_color'=>0], bool $hoist=false, ?string $icon=null, ?string $unicodeEmoji=null, bool $mentionable=false, int $retryXTimes=1) {
         do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles",[
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ["Content-Type: application/json", "Authorization: Bot {$this->botToken}"],
@@ -857,7 +857,7 @@ class Discord {
         return $res;
     }
 
-    public function api_modifyGuildRole(string $serverId, string $roleId, ?string $name=null, ?string $permissions=null, array $colors=['primary_color'=>0], ?bool $hoist=null, ?string $icon=null, ?string $unicodeEmoji=null, ?bool $mentionable=null, int $retryXTimes=1) {
+    public function api_modifyGuildRole(string $serverId, string $roleId, ?string $name=null, string $permissions='0', array $colors=['primary_color'=>0], ?bool $hoist=null, ?string $icon=null, ?string $unicodeEmoji=null, ?bool $mentionable=null, int $retryXTimes=1) {
         do $res = curl_quickRequest("{$this->apiUrl}/guilds/$serverId/roles/$roleId",[
             CURLOPT_CUSTOMREQUEST => 'PATCH',
             CURLOPT_RETURNTRANSFER => true,
